@@ -1,8 +1,18 @@
-[![Lexcube Logo](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/lexcube-logo.png)](https://github.com/msoechting/lexcube)
+[![Lexcube Logo](/readme-media/lexcube-logo.png)](https://github.com/msoechting/lexcube)
 
 **3D Data Cube Visualization in Jupyter Notebooks**
 
 ![Lexcube Demo GIF](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/lexcube-demo.gif)
+
+--- 
+
+**GitHub**: [https://github.com/msoechting/lexcube](https://github.com/msoechting/lexcube)
+
+**Paper**: [https://doi.org/10.1109/MCG.2023.3321989](https://doi.org/10.1109/MCG.2023.3321989)
+
+**PyPI**: [https://pypi.org/project/lexcube/](https://pypi.org/project/lexcube/)
+
+---
 
 Lexcube is a library for interactively visualizing three-dimensional floating-point data as 3D cubes in Jupyter notebooks. 
 
@@ -20,8 +30,15 @@ Example notebooks can be found in the [examples](https://github.com/msoechting/l
 ## Attribution
 
 When using Lexcube in your research, please cite:
-- M. Söchting, M. D. Mahecha, D. Montero and G. Scheuermann, "Lexcube: Interactive Visualization of Large Earth System Data Cubes," in IEEE Computer Graphics and Applications, doi: [10.1109/MCG.2023.3321989](https://www.doi.org/10.1109/MCG.2023.3321989).
-
+```bibtex
+@article{soechting2023lexcube,
+  author={Söchting, Maximilian and Mahecha, Miguel D. and Montero, David and Scheuermann, Gerik},
+  journal={IEEE Computer Graphics and Applications}, 
+  title={Lexcube: Interactive Visualization of Large Earth System Data Cubes}, 
+  year={2023},
+  doi={10.1109/MCG.2023.3321989}
+}
+```
 Lexcube is a project by Maximilian Söchting at the [RSC4Earth](https://www.rsc4earth.de/) at Leipzig University, advised by Prof. Dr. Miguel D. Mahecha and Prof. Dr. Gerik Scheuermann. Thanks to the funding provided by ESA through DeepESDL and DFG through the NFDI4Earth pilot projects!
 
 ## How to Use Lexcube
