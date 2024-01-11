@@ -82,6 +82,14 @@ w = lexcube.Cube3DWidget(da)
 w
 ```
 
+#### Note on Google Collab
+If you are using Google collab, you need to execute the following before running Lexcube:
+
+```python
+from google.colab import output
+output.enable_custom_widget_manager()
+```
+
 ## Installation
 
 You can install using `pip`:
