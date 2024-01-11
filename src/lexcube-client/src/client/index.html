@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>LexCube - Leipzig Explorer of Earth Data Cubes</title>
+    <meta name="title" content="LexCube - Leipzig Explorer of Earth Data Cubes">
+    <meta name="description" content="LexCube is an interactive visualization for large-scale earth data sets. Created at Leipzig University by Maximilian Söchting.">
+    <meta name="keywords" content="data cube, earth system data cube, leipzig, esdl, earth system data lab, interactive, visualization, geoscience, remote sensing, geophysics, esa, european space agency">
+    <meta name="robots" content="index, follow">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="language" content="English">
+    <meta name="author" content="Maximilian Söchting">
+    <meta charset="utf-8" />
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192"  href="/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link href="nouislider.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <style>.expert-mode {display: none;}</style>
+</head>
+
+<body class="lexcube-body">
+
+    <div class="fullscreen-wrapper nopointer noselect" style="text-align: center; color:white">
+        <div style="position: absolute" class="axis-label-parent axis-label-parent-x-min"><div class="axis-label axis-label-x-min"></div></div>
+        <div style="position: absolute" class="axis-label-parent axis-label-parent-x-max"><div class="axis-label axis-label-x-max"></div></div>
+        <div style="position: absolute" class="axis-label-parent axis-label-parent-x-dimension-name"><div class="axis-label axis-label-x-dimension-name"></div></div>
+        <div style="position: absolute" class="axis-label-parent axis-label-parent-y-min"><div class="axis-label axis-label-y-min"></div></div>
+        <div style="position: absolute" class="axis-label-parent axis-label-parent-y-max"><div class="axis-label axis-label-y-max"></div></div>
+        <div style="position: absolute" class="axis-label-parent axis-label-parent-y-dimension-name"><div class="axis-label axis-label-y-dimension-name"></div></div>
+        <div style="position: absolute" class="axis-label-parent axis-label-parent-z-min"><div class="axis-label axis-label-z-min"></div></div>
+        <div style="position: absolute" class="axis-label-parent axis-label-parent-z-max"><div class="axis-label axis-label-z-max"></div></div>
+        <div style="position: absolute" class="axis-label-parent axis-label-parent-z-dimension-name"><div class="axis-label axis-label-z-dimension-name"></div></div>
+    </div>
+
+    <div class="fullscreen-wrapper noselect nopointer">
+        <div class="dataset-info-corner">
+            <div class="dataset-info-corner-list" style="display: flex;flex-direction: column;align-items: flex-end;">
+            </div>
+        </div>
+    </div>
+
+
+    <div class="toolbar-ui">
+        <div class="toolbar-ui-button download-image-button" title="Download Image" style="background-image: url('download.svg'); display: none;"></div>
+        <div class="toolbar-ui-button download-template-button" title="Download Print Template" style="background-image: url('download-print-template.svg');"></div>
+        <div class="toolbar-ui-button gps-button" title="Show Current Location on Cube" style="background-image: url('location.svg');"></div>
+        <div class="toolbar-ui-button animate-start-button" title="Start Animation" style="background-image: url('play.svg')"></div>
+        <div class="toolbar-ui-button animate-stop-button" title="Stop Animation" style="background-image: url('pause.svg');display:none;"></div>
+        <div class="toolbar-ui-button data-select-button" title="Options" onclick="let c = this.parentNode.parentNode.getElementsByClassName('options-ui')[0]; c.style.display = c.style.display == 'none' ? 'block' : 'none';" style="background-image: url('data-management.svg')"></div>
+        <div class="toolbar-ui-button fullscreen-button" title="Enter/exit fullscreen" style="background-image: url('fullscreen.svg')"></div>
+    </div>
+
+    <div class="flex-col-center nopointer noselect bottom-left-ui">
+        <div class="ui-normal hover-info-ui"></div>
+        <div class="flex-col-center color-scale">
+            <div class="color-scale-gradient"></div>
+            <div class="color-scale-labels">
+                <div class="color-scale-label"></div>
+                <div class="color-scale-label"></div>
+                <div class="color-scale-label"></div>
+            </div>
+            <div class="color-scale-unit-label"></div>
+        </div>
+    </div>
+
+    <div class="ui-normal noselect options-ui" style="display: none;">
+        <button type="button" class="collapsible-button" onclick="this.parentNode.style.display = 'none';">Close</button>
+        <hr>
+        <div>
+            Cube:<br>
+            <select class="cube-select">
+                <option value="0"></option>
+            </select>
+        </div>
+        <div>
+            Parameter:<br>
+            <select class="parameter-select">
+                <option value="0"></option>       
+            </select>
+        </div>
+        <div class="expert-mode">
+            Display Quality:<br>
+            <select class="quality-select">
+                <option value="0.2" label="Very Low (20%)"></option>
+                <option value="0.5" label="Low (50%)"></option>
+                <option value="1.0" label="Default (100%)" selected></option>
+                <option value="1.5" label="High (150%)"></option>
+                <option value="2.0" label="Very High (200%)"></option>
+                <option value="1000.0" label="Data Resolution"></option>
+            </select>
+        </div>
+        <hr>
+        <h3 class="noselect" style="cursor: pointer;" onclick="console.log(this.nextSibling); f = this.nextSibling; let e = this; if (f.style.display == 'none') { f.style.display = 'block'; e.textContent = '▼ ' + e.textContent.substring(2) } else { f.style.display = 'none';  e.textContent = '► ' + e.textContent.substring(2) }">▼ Current Selection</h3><div class="selection-section" style="min-width: 330px;">
+            <div class="x-selection-slider-label">X:</div>
+            <div>
+                <div class="slider x-selection-slider"></div>
+            </div>
+            <div class="y-selection-slider-label">Y:</div>
+            <div>
+                <div class="slider y-selection-slider"></div>
+            </div>
+            <div class="z-selection-slider-label">Z:</div>
+            <div>
+                <div class="slider z-selection-slider"></div>
+            </div>
+        </div>
+        
+        <h3 class="noselect expert-mode" style="cursor: pointer;" onclick="let g = this.nextSibling; let h = this; if (g.style.display == 'none') { g.style.display = 'block'; h.textContent = '▼ ' + h.textContent.substring(2) } else { g.style.display = 'none';  h.textContent = '► ' + h.textContent.substring(2) }">► Colormap</h3><div class="expert-mode colormap-section" style="display: none;">
+            Value Range:<br>
+            <div>
+                <input type="text" class="colormap-min-input" placeholder="1.0" style="width:8em"/> -
+                <input type="text" class="colormap-max-input" placeholder="1.0" style="width:8em"/>
+                <button class="colormap-range-apply-button">Apply</button>
+            </div>
+            <div>
+                <input type="checkbox" class="colormap-flipped-checkbox" name="colormap-flipped">
+                <label for="colormap-flipped-checkbox" class="noselect">Flip Colormap</label>
+            </div>
+            <div>
+                <input type="checkbox" class="colormap-percentile-checkbox" name="colormap-percentile" checked>
+                <label for="colormap-percentile-checkbox" class="noselect">Only consider ± 2.5 σ (98.7% of data points)</label>
+            </div>
+            <div class="btn-group colormap-list" style="display: block;">
+
+            </div>
+        </div>
+    </div>
+
+    <div class="fullscreen-wrapper nopointer noselect">
+        <div style="text-align: center; margin-top: 3%;">
+            <div class="status-message">Starting LexCube...</div>
+        </div>
+    </div>
+    <div class="fullscreen-wrapper flex-col-center dataset-info-wrapper">
+        <div class="ui-normal flex-col-center dataset-info-window">
+            <div class="dataset-info" style="max-width: 100%; overflow-y: auto; overflow-x: hidden;"></div>
+            
+            <div style="width: 100%; text-align: center;">  
+                <hr>
+                <div class="expert-mode">
+                    LexCube is an interactive visualization of large-scale earth data sets. Created at Leipzig University by Maximilian Söchting.
+                </div>
+                <p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/">Images generated by <a property="dct:title" rel="cc:attributionURL" target="_blank" href="https://www.lexcube.org">LexCube - Leipzig Explorer of Earth Data Cubes</a> by <a rel="cc:attributionURL dct:creator" property="cc:attributionName" target="_blank" href="https://rsc4earth.de/authors/msoechting/">Maximilian Söchting</a> are licensed under <a href="http://creativecommons.org/licenses/by/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"></a></p> 
+
+                <div class="expert-mode">
+                    Client Version: <%= htmlWebpackPlugin.options.version %> (Commit: <%= htmlWebpackPlugin.options.commitDate %>, Build: <%= htmlWebpackPlugin.options.buildDate %>)
+                </div>
+            </div>
+            <button style="margin-top: 10px" onclick="this.parentNode.parentNode.style.display = 'none'">Acknowledge</button>
+        </div>
+    </div>
+
+    <div class="fullscreen-wrapper flex-col-center tutorial-wrapper" style="background-color: rgba(255, 255, 255, 0.7);" onclick="this.parentNode.removeChild(this)">
+        <div class="ui-normal flex-col-center tutorial-window" style="box-shadow: 10px 10px 20px black;" onclick="event.stopPropagation()">
+            <div style="width: 100%; text-align: center;">
+                <h2>LexCube: How to Use</h2>
+                <div class="tutorial-mouse" style="display: none;">
+                    <div style="margin-bottom: 5px;">1. Drag and scroll on the <b>background</b> to move and rotate the cube.</div>
+                    <div style="margin-bottom: 5px;">2. Drag and scroll on the <b>cube</b> to interact with the data.</div>
+                    <video class="tutorial-video" onloadeddata="this.play();" playsinline loop muted controls>
+                        <source src="demo-mouse-an.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div class="tutorial-touch" style="display: none;">
+                    <div style="margin-bottom: 5px;">1. Touch and drag on the <b>background</b> to move and rotate the cube.</div>
+                    <div style="margin-bottom: 5px;">2. Touch and drag on the <b>cube</b> to interact with the data.</div>
+                    <video class="tutorial-video" onloadeddata="this.play();" playsinline loop muted controls>
+                        <source src="demo-touch-an.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+            <button style="margin: 10px; font-size: larger;" onclick="const l = this.parentNode.parentNode;l.parentNode.removeChild(l);">Close Tutorial</button>
+        </div>
+    </div>
+
+    <div class="fullscreen-wrapper flex-col-center print-template-result-wrapper" style="background-color: rgba(0, 0, 0, 1); display: none; z-index: 20;">
+        <div class="ui-normal flex-col-center" style="box-shadow: 10px 10px 20px black;max-height:95%" onclick="event.stopPropagation()">
+            <div class="print-template-loading-section flex-col-center noselect" style="padding: 20px;">
+                <div class="logo">
+                    <video class="print-template-loader-video" playsinline loop muted>
+                        <source src="loader.mp4" type="video/mp4">
+                    </video>
+                    <!-- <svg
+                       width="3.69cm"
+                       height="3.95cm"
+                       viewBox="-10 -10 125.827 133.386"
+                       version="1.1"
+                       class="svg417"
+                       sodipodi:docname="lexcube-logo.svg"
+                       inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+                       xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+                       xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+                       xmlns="http://www.w3.org/2000/svg"
+                       xmlns:svg="http://www.w3.org/2000/svg">
+                      <defs
+                         id="defs421" />
+                      <path
+                         d="m0 0 26.219-13.754L54.981-.614 28.352 11.355Z"
+                         transform="matrix(1.33333 0 0 -1.33333 17.025 29.723)"
+                         id="logo-top"
+                         inkscape:label="logo-top"
+                         style="fill:#8982b0;fill-opacity:1;fill-rule:nonzero;stroke:none;" />
+                      <path
+                         d="M0 0v32.441l27.449 13.098-1.179-31.305Z"
+                         style="fill:#e8736c;fill-opacity:1;fill-rule:nonzero;stroke:none"
+                         transform="matrix(1.33333 0 0 -1.33333 56.853 99.993)"
+                         id="logo-right"
+                         inkscape:label="logo-right" />
+                      <path
+                         d="m0 0 1.039-30.656 24.07-15.258-.043 32.285z"
+                         style="fill:#435179;fill-opacity:1;fill-rule:nonzero;stroke:none"
+                         transform="matrix(1.33333 0 0 -1.33333 13.645 38.353)"
+                         id="logo-left"
+                         inkscape:label="logo-left" />
+                    </svg>                 -->
+                </div>
+                <div>Building your own data cube...</div>
+            </div>
+            <div class="print-template-result-section" style="display: none;max-height: 100%;overflow-y: scroll;">
+                <div class="flex-col-center" style="gap: 10px;text-align: center;height: 100%;">
+                    <h1>Craft Your Data Cube!</h1>
+                    <div>Print🖨️, fold📃, cut✂️ and glue🩹 to make your own crafted data cube. 🧊</div>
+                    <div style="display: flex; flex-direction: row;gap: 10px;justify-content: center;">
+                        <a class="download-print-template-result-svg" style="font-size: larger;">Download SVG</a>
+                        <a class="download-print-template-result-png" style="font-size: larger;">Download PNG</a>
+                        <a class="download-print-template-result-edit-note" style="font-size: larger;" href="#">Add custom note</a>
+                    </div>
+                    <div class="print-template-result"></div>
+                    <button style="font-size: larger; margin: 10px" onclick="const d = document.getElementsByClassName('print-template-result-wrapper')[0];d.style.display = 'none';">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const b = document.body;
+        if (document.URL.indexOf("localhost") != -1) {
+            b.getElementsByClassName("tutorial-wrapper")[0].style.display = "none";
+        }
+        var touchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        b.getElementsByClassName("tutorial-mouse")[0].style.display = touchDevice ? 'none' : 'block';
+        b.getElementsByClassName("tutorial-touch")[0].style.display = touchDevice ? 'block' : 'none';
+        var smaller = Math.min(window.innerWidth * 0.6, window.innerHeight * 0.6);
+        b.getElementsByTagName("video")[0].width = smaller;
+        b.getElementsByTagName("video")[0].height = smaller;
+        b.getElementsByTagName("video")[1].width = smaller;
+        b.getElementsByTagName("video")[1].height = smaller;
+        window.lexcubeStandalone = true;
+    </script>
+</body>
+
+</html>

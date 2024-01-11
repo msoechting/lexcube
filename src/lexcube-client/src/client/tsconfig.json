@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "target": "ES6",
+        "moduleResolution": "node",
+        "strict": true,
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true,
+        "allowJs": true
+    },
+    "include": ["**/*.ts"]
+}

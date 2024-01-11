@@ -1,0 +1,21 @@
+{
+    "datasetBaseDir": "C:/code/data-cube",
+    "tileCacheDir": ".tiles",
+    "preGenerationThreads": 4,
+    "datasets": [
+        {
+            "id": "esdc-2.1.1-low-res",
+            "shortName": "ESDC 2.1.1 (Low Res)",
+            "datasetPath": "esdc-8d-0.25deg-1x720x1440-2.1.1.zarr",
+            "preGenerationSparsity": 10,
+            "approximateMinMaxValues": true,
+            "ignoredParameters": ["mask", "psurf", "srex_mask", "water_mask", "xch4", "xco2", "fat_p"],
+            "onlyParameters": ["air_temperature_2m"],
+            "overrideMaxLod": -1,
+            "calculateYearlyAnomalies": false,
+            "hidden": false,
+            "flippedY": false,
+            "useOfflineMetadata": false
+        }
+    ]
+}

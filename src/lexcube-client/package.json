@@ -1,0 +1,36 @@
+{
+  "name": "lexcube-client",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "webpack --config ./src/client/webpack.prod.js",
+    "dev": "webpack serve --config ./src/client/webpack.dev.js"
+  },
+  "author": "Maximilian Söchting",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@types/node": "^13.13.15",
+    "@types/qrcode": "^1.5.0",
+    "@types/three": "^0.144.0",
+    "git-revision-webpack-plugin": "^5.0.0",
+    "html-webpack-plugin": "^5.5.0",
+    "javascript-obfuscator": "^4.0.0",
+    "three": "^0.144.0",
+    "ts-loader": "^9.2.5",
+    "typescript": "^4.4.3",
+    "uglify-js": "^3.15.5",
+    "webpack": "^5.64.1",
+    "webpack-cli": "^4.9.1",
+    "webpack-dev-server": "^4.5.0",
+    "webpack-merge": "^5.8.0",
+    "webpack-obfuscator": "^3.5.1"
+  },
+  "dependencies": {
+    "html-to-image": "^1.11.11",
+    "nouislider": "^15.5.1",
+    "numcodecs": "file:deps/numcodecs-0.2.5.tgz",
+    "polyfill-array-includes": "^2.0.0",
+    "qrcode": "^1.5.3",
+    "socket.io-client": "^4.4.1"
+  }
+}

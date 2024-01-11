@@ -1,0 +1,6 @@
+[submodule "lexcube/client"]
+	path = src/lexcube-client
+	url = git@github.com:msoechting/lexcube-client.git
+[submodule "lexcube/lexcube-server"]
+	path = lexcube/lexcube_server
+	url = git@github.com:msoechting/lexcube-server.git

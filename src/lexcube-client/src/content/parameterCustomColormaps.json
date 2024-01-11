@@ -1,0 +1,902 @@
+{
+    "esdc-2.1.1-high-res": [
+        {
+            "key": "Rg",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 400,
+            "colormap": "haline"
+        },
+        {
+            "key": "aerosol_optical_thickness_1600",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 2.2,
+            "colormap": "tempo"
+        },
+        {
+            "key": "aerosol_optical_thickness_550",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 2.2,
+            "colormap": "tempo"
+        },
+        {
+            "key": "aerosol_optical_thickness_670",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 2.2,
+            "colormap": "tempo"
+        },
+        {
+            "key": "aerosol_optical_thickness_870",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 2.2,
+            "colormap": "tempo"
+        },
+        {
+            "key": "air_temperature_2m",
+            "colormapMinimumValue": 203.15,
+            "colormapMaximumValue": 313.15,
+            "colormap": "matter",
+            "colormapFlipped": true
+        },
+        {
+            "key": "analysed_sst",
+            "colormapMinimumValue": 273.15,
+            "colormapMaximumValue": 313.15,
+            "colormap": "matter",
+            "colormapFlipped": true
+        },
+        {
+            "key": "bare_soil_evaporation",
+            "colormapMinimumValue": -0.5,
+            "colormapMaximumValue": 4.5,
+            "colormap": "dense"
+        },
+        {
+            "key": "black_sky_albedo",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1,
+            "colormap": "grays"
+        },
+        {
+            "key": "black_sky_albedo_avhrr",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1,
+            "colormap": "grays"
+        },
+        {
+            "key": "burnt_area",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 25000,
+            "colormap": "gist_heat",
+            "colormapFlipped": true
+        },
+        {
+            "key": "c_emissions",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 100,
+            "colormap": "gist_heat",
+            "colormapFlipped": true
+        },
+        {
+            "key": "cee",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 1,
+            "colormap": "viridis"
+        },
+        {
+            "key": "cer",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 100,
+            "colormap": "viridis"
+        },
+        {
+            "key": "cfc",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 1,
+            "colormap": "viridis"
+        },
+        {
+            "key": "chlor_a",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 3,
+            "colormap": "deep"
+        },
+        {
+            "key": "cot",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 100,
+            "colormap": "tempo"
+        },
+        {
+            "key": "cph",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 1.0,
+            "colormap": "viridis"
+        },
+        {
+            "key": "cth",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 20,
+            "colormap": "turbid"
+        },
+        {
+            "key": "ctp",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1000,
+            "colormap": "solar"
+        },
+        {
+            "key": "ctt",
+            "colormapMinimumValue": 213.15,
+            "colormapMaximumValue": 323.15,
+            "colormap": "matter",
+            "colormapFlipped": true
+        },
+        {
+            "key": "evaporation",
+            "colormapMinimumValue": -0.35,
+            "colormapMaximumValue": 12.76,
+            "colormap": "dense"
+        },
+        {
+            "key": "evaporative_stress",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 1.0,
+            "colormap": "dense"
+        },
+        {
+            "key": "fapar_tip",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 1,
+            "colormap": "amp"
+        },
+        {
+            "key": "fat_c",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.018,
+            "colormap": "solar"
+        },
+        {
+            "key": "flt_c",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.01,
+            "colormap": "solar"
+        },
+        {
+            "key": "flt_p",
+            "colormapMinimumValue": 420,
+            "colormapMaximumValue": 740,
+            "colormap": "solar"
+        },
+        {
+            "key": "fractional_snow_cover",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 100.0,
+            "colormap": "ice"
+        },
+        {
+            "key": "free_fat_c",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.015,
+            "colormap": "solar"
+        },
+        {
+            "key": "free_flt_c",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.008,
+            "colormap": "solar"
+        },
+        {
+            "key": "free_lrt_c",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.04,
+            "colormap": "solar"
+        },
+        {
+            "key": "free_msr_flt",
+            "colormapMinimumValue": -0.075,
+            "colormapMaximumValue": 0.05,
+            "colormap": "solar"
+        },
+        {
+            "key": "free_msr_lrt",
+            "colormapMinimumValue": -0.07,
+            "colormapMaximumValue": 0.05,
+            "colormap": "solar"
+        },
+        {
+            "key": "gross_primary_productivity",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 13,
+            "colormap": "speed"
+        },
+        {
+            "key": "interception_loss",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 3.0,
+            "colormap": "dense"
+        },
+        {
+            "key": "iwp",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 15000,
+            "colormap": "ice"
+        },
+        {
+            "key": "land_surface_temperature",
+            "colormapMinimumValue": 153.15,
+            "colormapMaximumValue": 353.15,
+            "colormap": "matter",
+            "colormapFlipped": true
+        },
+        {
+            "key": "latent_energy",
+            "colormapMinimumValue": -0.5,
+            "colormapMaximumValue": 14,
+            "colormap": "dense"
+        },
+        {
+            "key": "leaf_area_index",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 4,
+            "colormap": "algae"
+        },
+        {
+            "key": "lrt_c",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.037,
+            "colormap": "solar"
+        },
+        {
+            "key": "lrt_p",
+            "colormapMinimumValue": 75,
+            "colormapMaximumValue": 550,
+            "colormap": "solar"
+        },
+        {
+            "key": "lwp",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 5900.0,
+            "colormap": "ice"
+        },
+        {
+            "key": "max_air_temperature_2m",
+            "colormapMinimumValue": 203.15,
+            "colormapMaximumValue": 323.15,
+            "colormap": "matter",
+            "colormapFlipped": true
+        },
+        {
+            "key": "min_air_temperature_2m",
+            "colormapMinimumValue": 193.15,
+            "colormapMaximumValue": 313.15,
+            "colormap": "matter",
+            "colormapFlipped": true
+        },
+        {
+            "key": "msr_flt",
+            "colormapMinimumValue": -0.04,
+            "colormapMaximumValue": 0.04,
+            "colormap": "solar"
+        },
+        {
+            "key": "msr_lrt",
+            "colormapMinimumValue": -0.03,
+            "colormapMaximumValue": 0.045,
+            "colormap": "solar"
+        },
+        {
+            "key": "net_ecosystem_exchange",
+            "colormapMinimumValue": -3,
+            "colormapMaximumValue": 3,
+            "colormap": "curl"
+        },
+        {
+            "key": "net_radiation",
+            "colormapMinimumValue": -2.6,
+            "colormapMaximumValue": 19.8,
+            "colormap": "haline"
+        },
+        {
+            "key": "open_water_evaporation",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 4,
+            "colormap": "dense"
+        },
+        {
+            "key": "ozone",
+            "colormapMinimumValue": 110,
+            "colormapMaximumValue": 520,
+            "colormap": "viridis"
+        },
+        {
+            "key": "par",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 200,
+            "colormap": "haline"
+        },
+        {
+            "key": "pardiff",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 100,
+            "colormap": "haline"
+        },
+        {
+            "key": "potential_evaporation",
+            "colormapMinimumValue": -0.5,
+            "colormapMaximumValue": 8,
+            "colormap": "dense"
+        },
+        {
+            "key": "precipitation",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 50,
+            "colormap": "dense"
+        },
+        {
+            "key": "precipitation_era5",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.5,
+            "colormap": "dense"
+        },
+        {
+            "key": "radiation_era5",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 360000000,
+            "colormap": "haline"
+        },
+        {
+            "key": "root_moisture",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 0.85,
+            "colormap": "dense"
+        },
+        {
+            "key": "sea_ice_fraction",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 1.0,
+            "colormap": "ice"
+        },
+        {
+            "key": "sensible_heat",
+            "colormapMinimumValue": -2.5,
+            "colormapMaximumValue": 14,
+            "colormap": "matter"
+        },
+        {
+            "key": "sm",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 1,
+            "colormap": "dense"
+        },
+        {
+            "key": "snow_sublimation",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 2,
+            "colormap": "ice"
+        },
+        {
+            "key": "snow_water_equivalent",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 200,
+            "colormap": "dense"
+        },
+        {
+            "key": "stemp",
+            "colormapMinimumValue": 243.15,
+            "colormapMaximumValue": 323.15,
+            "colormap": "matter",
+            "colormapFlipped": true
+        },
+        {
+            "key": "surface_moisture",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 0.85,
+            "colormap": "dense"
+        },
+        {
+            "key": "terrestrial_ecosystem_respiration",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 7.7,
+            "colormap": "copper",
+            "colormapFlipped": true
+        },
+        {
+            "key": "totcol_assim",
+            "colormapMinimumValue": 0.05,
+            "colormapMaximumValue": 0.24,
+            "colormap": "solar"
+        },
+        {
+            "key": "totcol_free",
+            "colormapMinimumValue": 0.05,
+            "colormapMaximumValue": 0.24,
+            "colormap": "solar"
+        },
+        {
+            "key": "totcol_msr",
+            "colormapMinimumValue": 0.05,
+            "colormapMaximumValue": 0.24,
+            "colormap": "solar"
+        },
+        {
+            "key": "transpiration",
+            "colormapMinimumValue": -1,
+            "colormapMaximumValue": 6.5,
+            "colormap": "dense"
+        },
+        {
+            "key": "water_vapour",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 160,
+            "colormap": "dense"
+        },
+        {
+            "key": "white_sky_albedo",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1,
+            "colormap": "grays"
+        },
+        {
+            "key": "white_sky_albedo_avhrr",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1,
+            "colormap": "grays"
+        }
+    ],
+    "cams-eac4-monthly": [
+        {
+            "key": "t2m",
+            "colormap": "matter",
+            "colormapFlipped": true,
+            "colormapMinimumValue": 213.15,
+            "colormapMaximumValue": 313.15
+        },
+        {
+            "key": "bcaod550",
+            "colormap": "turbid",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.35
+        },
+        {
+            "key": "duaod550",
+            "colormap": "turbid",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1.2
+        },
+        {
+            "key": "omaod550",
+            "colormap": "turbid",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 2
+        },
+        {
+            "key": "pm10",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 3.0e-06
+        },
+        {
+            "key": "pm2p5",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 2.0e-06
+        },
+        {
+            "key": "ssaod550",
+            "colormap": "turbid",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.25
+        },
+        {
+            "key": "suaod550",
+            "colormap": "turbid",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1
+        },
+        {
+            "key": "aod550",
+            "colormap": "turbid",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 2
+        },
+        {
+            "key": "tcco",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.005
+        },
+        {
+            "key": "tc_c2h6",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.00003
+        },
+        {
+            "key": "tchcho",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.00004
+        },
+        {
+            "key": "tc_oh",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 6.5e-09
+        },
+        {
+            "key": "tc_c5h8",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 0.00025
+        },
+        {
+            "key": "tc_ch4",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.011
+        },
+        {
+            "key": "tc_hno3",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.00008
+        },
+        {
+            "key": "tcno2",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.00004
+        },
+        {
+            "key": "tc_no",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 2.0e-05
+        },
+        {
+            "key": "gtco3",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.011
+        },
+        {
+            "key": "tc_pan",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.0001
+        },
+        {
+            "key": "tc_c3h8",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.00005
+        },
+        {
+            "key": "tcso2",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.00005
+        },
+        {
+            "key": "tcw",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 70
+        },
+        {
+            "key": "tcwv",
+            "colormap": "viridis",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 70
+        },
+        {
+            "key": "aermssdus",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.0002
+        },
+        {
+            "key": "aermssdum",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.0005
+        },
+        {
+            "key": "aermssdul",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.001
+        },
+        {
+            "key": "aermssbchphil",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1.5e-05
+        },
+        {
+            "key": "aermssomhphil",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.0001
+        },
+        {
+            "key": "aermssbchphob",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 2.00e-05
+        },
+        {
+            "key": "aermssomhphob",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.0003
+        },
+        {
+            "key": "aermsssss",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 5.00e-06
+        },
+        {
+            "key": "aermssssm",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.0004
+        },
+        {
+            "key": "aermssssl",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.0002
+        },
+        {
+            "key": "aermsssu",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.0001
+        },
+        {
+            "key": "aermssso2",
+            "colormap": "solar",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.00005
+        }
+    ],
+    "esdc-3.0.2": [
+        {
+            "key": "aerosol_optical_thickness_550",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 2.0,
+            "colormap": "tempo"
+        },
+        {
+            "key": "air_temperature_2m",
+            "colormapMinimumValue": -60,
+            "colormapMaximumValue": 35,
+            "colormap": "matter",
+            "colormapFlipped": true
+        },
+        {
+            "key": "bare_soil_evaporation",
+            "colormapMinimumValue": -2,
+            "colormapMaximumValue": 5,
+            "colormap": "dense"
+        },
+        {
+            "key": "burnt_area",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 80000,
+            "colormap": "gist_heat",
+            "colormapFlipped": true
+        },
+        {
+            "key": "cot",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 100,
+            "colormap": "tempo"
+        },
+        {
+            "key": "cth",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 20,
+            "colormap": "turbid"
+        },
+        {
+            "key": "ctt",
+            "colormapMinimumValue": 213.15,
+            "colormapMaximumValue": 293.15,
+            "colormap": "matter",
+            "colormapFlipped": true
+        },
+        {
+            "key": "evaporation",
+            "colormapMinimumValue": -0.5,
+            "colormapMaximumValue": 12,
+            "colormap": "dense"
+        },
+        {
+            "key": "evaporation_era5",
+            "colormapMinimumValue": -30,
+            "colormapMaximumValue": 4,
+            "colormap": "dense"
+        },
+        {
+            "key": "evaporative_stress",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 1.0,
+            "colormap": "dense"
+        },
+        {
+            "key": "gross_primary_productivity",
+            "colormapMinimumValue": -1,
+            "colormapMaximumValue": 14,
+            "colormap": "speed"
+        },
+        {
+            "key": "interception_loss",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 6.0,
+            "colormap": "dense"
+        },
+        {
+            "key": "kndvi",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1,
+            "colormap": "tempo"
+        },
+        {
+            "key": "latent_energy",
+            "colormapMinimumValue": -0.5,
+            "colormapMaximumValue": 14,
+            "colormap": "dense"
+        },
+        {
+            "key": "max_air_temperature_2m",
+            "colormapMinimumValue": -70,
+            "colormapMaximumValue": 50,
+            "colormap": "matter",
+            "colormapFlipped": true
+        },
+        {
+            "key": "min_air_temperature_2m",
+            "colormapMinimumValue": -85,
+            "colormapMaximumValue": 35,
+            "colormap": "matter",
+            "colormapFlipped": true
+        },
+        {
+            "key": "msr_flt",
+            "colormapMinimumValue": -0.04,
+            "colormapMaximumValue": 0.04,
+            "colormap": "solar"
+        },
+        {
+            "key": "msr_lrt",
+            "colormapMinimumValue": -0.03,
+            "colormapMaximumValue": 0.045,
+            "colormap": "solar"
+        },
+        {
+            "key": "net_ecosystem_exchange",
+            "colormapMinimumValue": -2,
+            "colormapMaximumValue": 2,
+            "colormap": "curl"
+        },
+        {
+            "key": "net_radiation",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 15,
+            "colormap": "haline"
+        },
+        {
+            "key": "open_water_evaporation",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 4,
+            "colormap": "dense"
+        },
+        {
+            "key": "potential_evaporation",
+            "colormapMinimumValue": -0.35,
+            "colormapMaximumValue": 6,
+            "colormap": "dense"
+        },
+        {
+            "key": "precipitation_era5",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 50,
+            "colormap": "dense"
+        },
+        {
+            "key": "radiation_era5",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1000000,
+            "colormap": "haline"
+        },
+        {
+            "key": "root_moisture",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 0.8,
+            "colormap": "dense"
+        },
+        {
+            "key": "sensible_heat",
+            "colormapMinimumValue": -2,
+            "colormapMaximumValue": 12,
+            "colormap": "matter"
+        },
+        {
+            "key": "sm",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 1,
+            "colormap": "dense"
+        },
+        {
+            "key": "snow_sublimation",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 2,
+            "colormap": "ice"
+        },
+        {
+            "key": "surface_moisture",
+            "colormapMinimumValue": 0.0,
+            "colormapMaximumValue": 0.85,
+            "colormap": "dense"
+        },
+        {
+            "key": "terrestrial_ecosystem_respiration",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 7,
+            "colormap": "copper",
+            "colormapFlipped": true
+        },
+        {
+            "key": "transpiration",
+            "colormapMinimumValue": -1,
+            "colormapMaximumValue": 5,
+            "colormap": "dense"
+        },
+        {
+            "key": "water_vapour",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 160,
+            "colormap": "dense"
+        },
+        {
+            "key": "white_sky_albedo",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1,
+            "colormap": "grays"
+        },
+        {
+            "key": "white_sky_albedo_avhrr",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 1,
+            "colormap": "grays"
+        },
+        
+        {"key": "nbar_blue",    "colormapMinimumValue": 0,"colormapMaximumValue": 1,"colormap": "bone"},
+        {"key": "nbar_green",   "colormapMinimumValue": 0,"colormapMaximumValue": 1,"colormap": "bone"},
+        {"key": "nbar_red",     "colormapMinimumValue": 0,"colormapMaximumValue": 1,"colormap": "bone"},
+        {"key": "nbar_nir",     "colormapMinimumValue": 0,"colormapMaximumValue": 1,"colormap": "bone"},
+        {"key": "nbar_swir1",   "colormapMinimumValue": 0,"colormapMaximumValue": 1,"colormap": "bone"},
+        {"key": "nbar_swir2",   "colormapMinimumValue": 0,"colormapMaximumValue": 1,"colormap": "bone"},
+        {"key": "nbar_swir3",   "colormapMinimumValue": 0,"colormapMaximumValue": 1,"colormap": "bone"},
+        {"key": "ndvi",         "colormapMinimumValue": 0,"colormapMaximumValue": 1,"colormap": "speed"},
+        {"key": "ndvi_lxc_anomaly", "colormapMinimumValue": -0.8,"colormapMaximumValue": 0.8},
+        {"key": "nirv",         "colormapMinimumValue": 0,"colormapMaximumValue": 0.8,"colormap": "speed"},
+        {"key": "nirv_lxc_anomaly", "colormapMinimumValue": -0.4,"colormapMaximumValue": 0.4},
+        {"key": "kndvi",        "colormapMinimumValue": 0,"colormapMaximumValue": 0.6,"colormap": "speed"},
+        {"key": "kndvi_lxc_anomaly", "colormapMinimumValue": -0.5,"colormapMaximumValue": 0.5},
+        {"key": "sif_gome2_jj", "colormapMinimumValue": 0,"colormapMaximumValue": 1,"colormap": "speed"},
+        {"key": "sif_gome2_pk", "colormapMinimumValue": 0,"colormapMaximumValue": 2,"colormap": "speed"},
+        {"key": "sif_gosif",    "colormapMinimumValue": 0,"colormapMaximumValue": 0.5,"colormap": "speed"},
+        {"key": "sif_rtsif",    "colormapMinimumValue": 0,"colormapMaximumValue": 1,"colormap": "speed"}
+    ],
+    "era5-specific-humidity-at-level-1000": [
+        {
+            "key": "q_lxc_anomaly",
+            "colormapMinimumValue": -0.01,
+            "colormapMaximumValue": 0.01
+        }
+    ]
+}

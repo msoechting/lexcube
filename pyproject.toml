@@ -1,0 +1,144 @@
+[build-system]
+requires = [
+    "hatchling>=1.3.1",
+    "jupyterlab==4.*",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "lexcube"
+description = "Lexcube: 3D Data Cube Visualization in Jupyter notebooks"
+readme = "README.md"
+license = { file = "COPYING" }
+requires-python = ">=3.9"
+authors = [
+    { name = "Maximilian Söchting", email = "maximilian.soechting@uni-leipzig.de" },
+]
+keywords = [
+    "IPython",
+    "Jupyter",
+    "Widgets",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Jupyter",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: JavaScript",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "ipywidgets>=7.0.0",
+    "bottleneck>=1.3.7",
+    "cachey>=0.2.1",
+    "dask>=2022.12.0",
+    "netCDF4>=1.6.3",
+    "opencv-python-headless>=4.7.0.72",
+    "xarray>=v2022.12.0",
+    "zarr>=2.14.2",
+    "zfpy>=1.0.0",
+]
+version = "0.4.8"
+
+[project.optional-dependencies]
+docs = [
+    "jupyter_sphinx",
+    "nbsphinx",
+    "nbsphinx-link",
+    "pypandoc",
+    "pytest_check_links",
+    "recommonmark",
+    "sphinx>=1.5",
+    "sphinx_rtd_theme",
+]
+examples = []
+test = [
+    "nbval",
+    "pytest-cov",
+    "pytest>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/msoechting/lexcube"
+
+[tool.hatch.build]
+artifacts = [
+    "lexcube/nbextension/index.*",
+    "lexcube/labextension/*.tgz",
+    "lexcube/labextension",
+]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"lexcube/nbextension" = "share/jupyter/nbextensions/lexcube"
+"lexcube/labextension" = "share/jupyter/labextensions/lexcube"
+"./install.json" = "share/jupyter/labextensions/lexcube/install.json"
+"./lexcube.json" = "etc/jupyter/nbconfig/notebook.d/lexcube.json"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    ".github",
+]
+
+[tool.hatch.build.hooks.jupyter-builder]
+build-function = "hatch_jupyter_builder.npm_builder"
+ensured-targets = [
+    "lexcube/nbextension/index.js",
+    "lexcube/labextension/package.json",
+]
+skip-if-exists = [
+    "lexcube/nbextension/index.js",
+    "lexcube/labextension/package.json",
+]
+dependencies = [
+    "hatch-jupyter-builder>=0.5.0",
+]
+
+[tool.hatch.build.hooks.jupyter-builder.build-kwargs]
+path = "."
+build_cmd = "build:prod"
+
+[tool.tbump]
+# Uncomment this if your project is hosted on GitHub:
+github_url = "https://github.com/msoechting/lexcube/"
+
+[tool.tbump.version]
+current = "0.4.8"
+
+# Example of a semver regexp.
+# Make sure this matches current_version before
+# using tbump
+regex = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)((?P<channel>a|b|rc|.dev)(?P<release>\\d+))?"
+
+[tool.tbump.git]
+message_template = "Bump to {new_version}"
+tag_template = "v{new_version}"
+
+# For each file to patch, add a [[tool.tbump.file]] config
+# section containing the path of the file, relative to the
+# tbump.toml location.
+[[tool.tbump.file]]
+src = "pyproject.toml"
+
+[[tool.tbump.file]]
+src = "lexcube/_version.py"
+
+
+# You can specify a list of commands to
+# run after the files have been patched
+# and before the git commit is made
+
+#  [[tool.tbump.before_commit]]
+#  name = "check changelog"
+#  cmd = "grep -q {new_version} Changelog.rst"
+
+# Or run some commands after the git tag and the branch
+# have been pushed:
+#  [[tool.tbump.after_push]]
+#  name = "publish"
+#  cmd = "./publish.sh"

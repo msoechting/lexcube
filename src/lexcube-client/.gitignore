@@ -1,0 +1,6 @@
+node_modules
+_node_modules
+dist/**/*.js
+dist/client/*.lnk
+dist/client/bundle.js.LICENSE.txt
+dist/client/index.html
