@@ -1,8 +1,8 @@
-![Lexcube Logo](readme-media/lexcube-logo.png)
+[![Lexcube Logo](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/lexcube-logo.png)](https://github.com/msoechting/lexcube)
 
 **3D Data Cube Visualization in Jupyter Notebooks**
 
-![Lexcube Demo GIF](readme-media/lexcube-demo.gif)
+![Lexcube Demo GIF](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/lexcube-demo.gif)
 
 Lexcube is a library for interactively visualizing three-dimensional floating-point data as 3D cubes in Jupyter notebooks. 
 
@@ -13,9 +13,9 @@ Supported data formats:
 Possible data sources:
 - Any gridded Zarr or NetCDF data set (local or remote, e.g., accessed with S3)
 - Copernicus Data Storage, e.g., [ERA5 data](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-complete?tab=overview)
-- Google Earth Engine ([using xee, see example notebook](/examples/4_google_earth_engine.ipynb))
+- Google Earth Engine ([using xee, see example notebook](https://github.com/msoechting/lexcube/blob/main/examples/4_google_earth_engine.ipynb))
 
-Example notebooks can be found in the [examples](/examples) folder. For a live demo, see also [lexcube.org](https://www.lexcube.org).
+Example notebooks can be found in the [examples](https://github.com/msoechting/lexcube/tree/main/examples) folder. For a live demo, see also [lexcube.org](https://www.lexcube.org).
 
 ## Attribution
 
@@ -25,11 +25,11 @@ When using Lexcube in your research, please cite:
 Lexcube is a project by Maximilian Söchting at the [RSC4Earth](https://www.rsc4earth.de/) at Leipzig University, advised by Prof. Dr. Miguel D. Mahecha and Prof. Dr. Gerik Scheuermann. Thanks to the funding provided by ESA through DeepESDL and DFG through the NFDI4Earth pilot projects!
 
 ## How to Use Lexcube
-If you are new to Lexcube, try the [general introduction notebook](/examples/1_introduction.ipynb) which demonstrates how to visualize a remote Xarray data set.
+If you are new to Lexcube, try the [general introduction notebook](https://github.com/msoechting/lexcube/blob/main/examples/1_introduction.ipynb) which demonstrates how to visualize a remote Xarray data set.
 
 There are also specific example notebooks for the following use cases:
-- [Visualizing Google Earth Engine data - using xee](/examples/4_google_earth_engine.ipynb)
-- [Generating and visualizing a spectral index data cube from scratch - using cubo and spyndex](/examples/3_spectral_indices_with_cubo_and_spyndex.ipynb)
+- [Visualizing Google Earth Engine data - using xee](https://github.com/msoechting/lexcube/blob/main/examples/4_google_earth_engine.ipynb)
+- [Generating and visualizing a spectral index data cube from scratch - using cubo and spyndex](https://github.com/msoechting/lexcube/blob/main/examples/3_spectral_indices_with_cubo_and_spyndex.ipynb)
 - [Visualizing Numpy data](examples/2_numpy.ipynb)
 
 ### Minimal Examples for Getting Started 
@@ -52,7 +52,7 @@ w
 ```
 
 #### Visualizing Google Earth Engine Data
-See [the full example here](/examples/4_google_earth_engine.ipynb).
+See [the full example here](https://github.com/msoechting/lexcube/blob/main/examples/4_google_earth_engine.ipynb).
 ```python 
 import lexcube
 import xarray as xr
@@ -144,7 +144,7 @@ w.cmap = cmocean.cm.thermal(np.linspace(0.0, 1.0, 100)).tolist()
 w.cmap = [[0.0, 0.0, 0.0], [1.0, 0.5, 0.5], [0.5, 1.0, 1.0]]
 ```
 
-<sub><sup><sup>*note*</sup> Lexcube actually calculates the mean of all values that have been visible so far in this session and applies ±2.5σ (standard deviation) in both directions to obtain the colormap ranges, covering approximately 98.7% of data points. This basic method allows to filter most outliers that would otherwise make the colormap range unnecessarily large and, therefore, the visualization uninterpretable.</sup></sub>
+<sup><sup>*note*</sup> Lexcube actually calculates the mean of all values that have been visible so far in this session and applies ±2.5σ (standard deviation) in both directions to obtain the colormap ranges, covering approximately 98.7% of data points. This basic method allows to filter most outliers that would otherwise make the colormap range unnecessarily large and, therefore, the visualization uninterpretable.</sup>
 
 ### Supported colormaps
 ```python
@@ -168,7 +168,7 @@ w.savefig(fname="cube.png", include_ui=True, dpi_scale=2.0)
 
 If you want to edit multiple cubes into one picture, you may prefer an isometric rendering. You can enable it in the constructor: `lexcube.Cube3DWidget(data_source, isometric_mode=True)`. For comparison:
 
-![Isometric comparison](readme-media/isometric.png)
+![Isometric vs. perspective camera comparison](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/isometric.png)
 
 
 ## Supported metadata
@@ -191,7 +191,7 @@ Below you can find a number of different common issues when working with Lexcube
 
 ### The cube does not respond / API methods are not doing anything / Cube does not load new data
 Under certain circumstances, the widget may get disconnected from the kernel. You can recognize it with this symbol (crossed out chain 🔗):
-![Crossed-out chain symbol under cell](readme-media/disconnected.png)
+![Crossed-out chain symbol under cell](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/disconnected.png)
 
 Possible Solutions:
 1. Execute the cell again
@@ -201,7 +201,7 @@ Possible Solutions:
 
 ### After installation/update, no widget is shown, only text
 Example:
-![Broken widget in post-installation](readme-media/post-installation-broken-widget.png)
+![Broken widget in post-installation](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/post-installation-broken-widget.png)
 
 Possible solutions:
 1. Restart the kernel

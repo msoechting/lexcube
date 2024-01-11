@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "lexcube"
-description = "Lexcube: 3D Data Cube Visualization in Jupyter notebooks"
+description = "Lexcube: 3D Data Cube Visualization in Jupyter Notebooks"
 readme = "README.md"
 license = { file = "COPYING" }
 requires-python = ">=3.9"
@@ -44,7 +44,7 @@ dependencies = [
     "zarr>=2.14.2",
     "zfpy>=1.0.0",
 ]
-version = "0.4.8"
+version = "0.4.9"
 
 [project.optional-dependencies]
 docs = [
@@ -108,7 +108,7 @@ build_cmd = "build:prod"
 github_url = "https://github.com/msoechting/lexcube/"
 
 [tool.tbump.version]
-current = "0.4.8"
+current = "0.4.9"
 
 # Example of a semver regexp.
 # Make sure this matches current_version before

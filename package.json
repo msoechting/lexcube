@@ -1,7 +1,7 @@
 {
   "name": "lexcube",
-  "version": "0.4.8",
-  "description": "Lexcube: 3D Data Cube Visualization in Jupyter notebooks",
+  "version": "0.4.9",
+  "description": "Lexcube: 3D Data Cube Visualization in Jupyter Notebooks",
   "keywords": [
     "jupyter",
     "jupyterlab",
