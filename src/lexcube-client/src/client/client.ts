@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { DeviceOrientation } from './constants';
 import { CubeInteraction } from './interaction';
 import { Networking } from './networking';
 import { CubeRendering } from './rendering';
@@ -39,6 +40,9 @@ class CubeClientContext {
     orchestrationMasterMode: boolean = (document.URL.indexOf("orchestrationMaster") > 0);
     noUiMode: boolean = (document.URL.indexOf("noUi") > 0);
     scriptedMultiViewMode: boolean = (document.URL.indexOf("scriptedMultiView") > 0);
+
+    screenOrientation: DeviceOrientation = (screen.orientation ? (screen.orientation.type.indexOf("landscape") > -1 ? DeviceOrientation.Landscape : DeviceOrientation.Portrait) : (window.innerHeight > window.innerWidth ? DeviceOrientation.Portrait : DeviceOrientation.Landscape));
+    screenAspectRatio: number = window.screen.width / window.screen.height;
 
     widgetMode: boolean = false;
 
@@ -76,6 +80,10 @@ class CubeClientContext {
                 document.getElementById("status-message")!.innerHTML = "LexCube failed to start.<br>Please retry on a more modern browser/device."
             }
         }        
+    }
+
+    isClientPortrait() {
+        return this.screenOrientation == DeviceOrientation.Portrait;
     }
 
 

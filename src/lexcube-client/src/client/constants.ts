@@ -31,6 +31,11 @@ enum Dimension {
     Z = 2,
 }
 
+enum DeviceOrientation {
+    Landscape = 0,
+    Portrait = 1,
+}
+
 function getIndexDimensionOfFace(face: CubeFace) {
     return (face <= 1 ? Dimension.Z : (face <= 3 ? Dimension.Y : Dimension.X));
 }
@@ -67,7 +72,12 @@ const NOT_LOADED_REPLACEMENT_VALUE = -99999.0; // hardcoded in shader, change th
 const COLORMAP_STEPS = 1024;
 const DEFAULT_COLORMAP = "viridis";
 
+const DEFAULT_WIDGET_WIDTH = 1024;
+const DEFAULT_WIDGET_HEIGHT = 768;
+
 const API_VERSION = 5;
 const TILE_VERSION = 2;
 
-export { positiveModulo, range, getIndexDimensionOfFace, getAddressedFacesOfDimension, getFacesOfIndexDimension, capitalizeString, DEFAULT_COLORMAP, ANOMALY_PARAMETER_ID_SUFFIX, TILE_FORMAT_MAGIC_BYTES, TILE_VERSION, TILE_SIZE, MAX_ZOOM_FACTOR, NAN_TILE_MAGIC_NUMBER, LOSSLESS_TILE_MAGIC_NUMBER, NAN_REPLACEMENT_VALUE, COLORMAP_STEPS, NOT_LOADED_REPLACEMENT_VALUE, API_VERSION, Dimension, CubeFace }
+const PACKAGE_VERSION = "0.4.13";
+
+export { DeviceOrientation, PACKAGE_VERSION, positiveModulo, range, getIndexDimensionOfFace, getAddressedFacesOfDimension, getFacesOfIndexDimension, capitalizeString, DEFAULT_WIDGET_WIDTH, DEFAULT_WIDGET_HEIGHT, DEFAULT_COLORMAP, ANOMALY_PARAMETER_ID_SUFFIX, TILE_FORMAT_MAGIC_BYTES, TILE_VERSION, TILE_SIZE, MAX_ZOOM_FACTOR, NAN_TILE_MAGIC_NUMBER, LOSSLESS_TILE_MAGIC_NUMBER, NAN_REPLACEMENT_VALUE, COLORMAP_STEPS, NOT_LOADED_REPLACEMENT_VALUE, API_VERSION, Dimension, CubeFace }

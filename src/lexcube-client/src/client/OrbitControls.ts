@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Vector2 } from 'three';
 import { clamp } from 'three/src/math/MathUtils';
 import { CubeInteraction } from './interaction';
+import { CubeClientContext } from './client';
 
 const STATE = {
   NONE: - 1,
@@ -109,9 +110,9 @@ export class OrbitControls extends THREE.EventDispatcher {
   onTouchMove: EventListener;
   onKeyDown: EventListener;
 
-  constructor (interaction: CubeInteraction, object: THREE.Camera, domElement?: HTMLElement, domWindow?: Window) {
+  constructor (context: CubeClientContext, object: THREE.Camera, domElement: HTMLElement, domWindow?: Window) {
     super();
-    this.cubeInteraction = interaction;
+    this.cubeInteraction = context.interaction;
     this.object = object;
 
     this.domElement = ( domElement !== undefined ) ? domElement : document;
@@ -126,12 +127,12 @@ export class OrbitControls extends THREE.EventDispatcher {
     this.target = new THREE.Vector3();
 
     // How far you can dolly in and out ( PerspectiveCamera only )
-    this.minDistance = () => window.innerWidth < window.innerHeight ? 4.0 - (4 * ((window.innerWidth / window.innerHeight) - 0.5)) : 2;
+    this.minDistance = () => context.isClientPortrait() ? 4.0 - (4 * (context.screenAspectRatio - 0.5)) : 2;
     this.maxDistance = 15;
 
     // How far you can zoom in and out ( OrthographicCamera only )
     this.minZoom = 0.3;
-    this.maxZoom = () => window.innerWidth < window.innerHeight ? 1.4 + (3*((window.innerWidth / window.innerHeight) - 0.5)) : 3.0;
+    this.maxZoom = () => context.isClientPortrait() ? 1.4 + (3 * (context.screenAspectRatio - 0.5)) : 3.0;
 
     // How far you can orbit vertically, upper and lower limits.
     // Range is 0 to Math.PI radians.

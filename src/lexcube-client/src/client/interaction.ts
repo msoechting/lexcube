@@ -1081,9 +1081,15 @@ class CubeInteraction {
     initialLoad = true;
     private updateLabelPositionTimeoutId: number = 0;
 
+    private additionalStatusMessageTimer: number = 0;
+    private additionalStatusMessage: string = "";
+
+    private localStorageUpdateWarningKey = "lexcube_jupyter_last_update_notification";
+    private packageUpdateReminderInterval = 1000 * 60 * 60; // 1 hour
+
     constructor(context: CubeClientContext, htmlParent: HTMLElement) {
         this.context = context;
-        this.colormapScaleWidth = context.widgetMode ? 180 : ((window.innerWidth < window.innerHeight ) ? 180 : 300);
+        this.colormapScaleWidth = context.widgetMode ? 180 : (context.isClientPortrait() ? 180 : 300);
         this.htmlParent = htmlParent;
         // if (window.innerWidth < window.innerHeight) {
         //     const c = document.getElementById("bottom-left-ui")!;
@@ -1124,7 +1130,7 @@ class CubeInteraction {
 
     private registerEvents() {
         const domElement = this.context.rendering.getDomElement();
-        this.orbitControls = new OrbitControls(this, this.context.rendering.camera, domElement);
+        this.orbitControls = new OrbitControls(this.context, this.context.rendering.camera, domElement);
 
         if (this.updateUiDuringInteractions.orbitControls) {
             this.orbitControls.addEventListener("change", this.context.rendering.updateVisibilityAndLods.bind(this.context.rendering));
@@ -1527,38 +1533,77 @@ class CubeInteraction {
         return `${Number(float.toFixed(this.floatDisplaySignificance))}`;
     }
 
-    updateStatusMessage(tileDownloadsTriggered: number, tileDownloadsFinished: number, tileDownloadsFailed: number, tileDecodesFailed: number) {
+    showVersionOutofDateWarning(new_version: string, old_version: string) {
+        try {
+            const s = localStorage.getItem(this.localStorageUpdateWarningKey);
+            if (s) {
+                const lastReminder = new Date(s);
+                const now = new Date();
+                if (now.getTime() - lastReminder.getTime() < this.packageUpdateReminderInterval) {
+                    return;
+                }
+            }
+        } catch (e) {
+            console.log("Could not access local storage");
+        }
+        localStorage.setItem(this.localStorageUpdateWarningKey, new Date().toISOString());
+        this.additionalStatusMessage = `New version ${new_version} available! (current: ${old_version})<br>Upgrade using "pip install lexcube --upgrade".`;
+        this.additionalStatusMessageTimer = window.setTimeout(() => {
+            this.additionalStatusMessageTimer = 0;
+            this.additionalStatusMessage = "";
+            this.updateStatusMessage();
+        }, 10000);
+        this.updateStatusMessage();
+    }
+
+    private lastStatusMessageProgress: number[] = [0, 0, 0, 0];
+
+    updateStatusMessage(tileDownloadsTriggered?: number, tileDownloadsFinished?: number, tileDownloadsFailed?: number, tileDecodesFailed?: number) {
+        if (tileDownloadsTriggered !== undefined && tileDownloadsFinished !== undefined && tileDownloadsFailed !== undefined && tileDecodesFailed !== undefined) {
+            this.lastStatusMessageProgress = [tileDownloadsTriggered, tileDownloadsFinished, tileDownloadsFailed, tileDecodesFailed];
+        }
+        const downloadsTriggered = this.lastStatusMessageProgress[0];
+        const downloadsFinished = this.lastStatusMessageProgress[1];
+        const downloadsFailed = this.lastStatusMessageProgress[2];
+        const decodeFailed = this.lastStatusMessageProgress[3];
+
         let lines = [];
 
-        if ((tileDownloadsFinished + tileDownloadsFailed) != tileDownloadsTriggered) {
-            const n = tileDownloadsTriggered - (tileDownloadsFinished + tileDownloadsFailed);
+        if ((downloadsFinished + downloadsFailed) != downloadsTriggered) {
+            const n = downloadsTriggered - (downloadsFinished + downloadsFailed);
             if (this.context.expertMode) {
                 lines.push(`${n} tile${n == 1 ? "" : "s"} downloading...`);
             } else if (this.context.widgetMode) {
-                const percentage = Math.round(tileDownloadsTriggered / tileDownloadsFinished * 100);
+                const percentage = Math.round(downloadsTriggered / downloadsFinished * 100);
                 lines.push(`Accessing data (${percentage}%)...`);
             } else {
                 lines.push("Downloading...");
             }
         }
 
-        if (tileDownloadsFailed > 0) {
+        if (downloadsFailed > 0) {
             lines.push(this.context.expertMode ? `${tileDownloadsFailed} tile downloads failed` : "Some downloads failed - try refreshing?");
         }
-        if (tileDecodesFailed > 0) {
+        if (decodeFailed > 0) {
             lines.push(this.context.expertMode ? `${tileDecodesFailed} tile decodes failed` : "Something went wrong - try refreshing?");
+        }
+        
+        if (this.additionalStatusMessage) {
+            lines.push(this.additionalStatusMessage);
         }
 
         if (lines.length > 0) {
             this.statusMessageDiv.style.display = "inline-block";
             let html = "";
             for (const line of lines) {
-                const color = (line.indexOf("failed") > -1 || line.indexOf("went wrong") > -1) ? "#ff4444" : "white";
+                const color = line.indexOf("version") > -1 ? "#48eeff" : ((line.indexOf("failed") > -1 || line.indexOf("went wrong") > -1) ? "#ff4444" : "white");
                 html +=`<div style='color: ${color}'>${line}</div>`
             }
             this.statusMessageDiv.innerHTML = html;
         } else {
-            this.statusMessageDiv.style.display = "none";
+            if (!this.additionalStatusMessage) {
+                this.statusMessageDiv.style.display = "none";
+            }
         }
     }
 
@@ -2449,7 +2494,7 @@ class CubeInteraction {
         this.context.log("Applying camera preset", c.name);
         let position = c.position.clone();
         const rotation = c.rotation;
-        if ((window.innerWidth < window.innerHeight) && !this.context.rendering.printTemplateDownloading) {
+        if (this.context.isClientPortrait() && !this.context.rendering.printTemplateDownloading) {
             position = position.multiplyScalar(1.5);
         }
         if (!this.context.isometricMode) {
@@ -3035,6 +3080,7 @@ class CubeInteraction {
         }
         return Infinity;
     }
+
 
     updateRequestProgressFromWidget(progress: number[]) {
         const done = progress[0];

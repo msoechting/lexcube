@@ -20,6 +20,7 @@ import { io, Socket } from 'socket.io-client';
 import { Vector2 } from 'three';
 import { CubeClientContext } from './client';
 import { Tile } from './tiledata';
+import { PACKAGE_VERSION } from './constants';
 
 class Networking {
     private receivedBytes = 0;
@@ -40,6 +41,7 @@ class Networking {
 
     async connect() {
         if (this.context.widgetMode) {
+            this.widgetVersionCheck();
             return;
         }
         await this.connectTileWebsockets();
@@ -184,6 +186,19 @@ class Networking {
         if (this.context.widgetMode) {
             this.requestTileDataFromWidget!({"request_type": "request_tile_data_multiple", "request_data": data});
         } else {
+        }
+    }
+
+    async widgetVersionCheck() {
+        try {
+            const f = await fetch("https://version.lexcube.org");
+            const j = await f.json();
+            const new_version = j["current_lexcube_jupyter_version"];
+            if (new_version != PACKAGE_VERSION) {
+                this.context.interaction.showVersionOutofDateWarning(new_version, PACKAGE_VERSION);
+            }    
+        } catch (error) {
+            console.log("Could not fetch version information from version.lexcube.org");
         }
     }
 

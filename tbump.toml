@@ -2,7 +2,7 @@
 # github_url = "https://github.com/<user or organization>/<project>/"
 
 [version]
-current = "0.4.10"
+current = "0.4.13"
 
 # Example of a semver regexp.
 # Make sure this matches current_version before
@@ -13,6 +13,9 @@ regex = '''
   (?P<minor>\d+)
   \.
   (?P<patch>\d+)
+  (\-
+    (?P<extra>.+)
+  )?
   '''
 
 [git]
@@ -34,13 +37,13 @@ src = "pyproject.toml"
 [[file]]
 src = "lexcube/_version.py"
 
+[[file]]
+src = "src/lexcube-client/src/client/constants.ts"
+
 # You can specify a list of commands to
 # run after the files have been patched
 # and before the git commit is made
 
-#  [[before_commit]]
-#  name = "check changelog"
-#  cmd = "grep -q {new_version} Changelog.rst"
 
 # Or run some commands after the git tag and the branch
 # have been pushed:

@@ -19,7 +19,7 @@
 import { AmbientLight, BoxGeometry, DataTexture, DataArrayTexture, DirectionalLight, FloatType, Mesh, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera, Raycaster, RedFormat, RGBAFormat, RGBFormat, Scene, ShaderMaterial, Triangle, Vector2, Vector3, WebGLRenderer } from 'three'
 import { clamp } from 'three/src/math/MathUtils';
 import { toPng } from 'html-to-image';
-import { COLORMAP_STEPS, CubeFace, Dimension, getAddressedFacesOfDimension, getFacesOfIndexDimension, NAN_REPLACEMENT_VALUE, NOT_LOADED_REPLACEMENT_VALUE, TILE_SIZE } from './constants';
+import { COLORMAP_STEPS, CubeFace, DEFAULT_WIDGET_HEIGHT, DEFAULT_WIDGET_WIDTH, Dimension, getAddressedFacesOfDimension, getFacesOfIndexDimension, NAN_REPLACEMENT_VALUE, NOT_LOADED_REPLACEMENT_VALUE, TILE_SIZE } from './constants';
 import { CubeClientContext } from './client';
 
 class LabelPositionResult {
@@ -285,7 +285,7 @@ class CubeRendering {
 
     getWidth() {
         if (this.context.widgetMode && !(this.context.interaction && this.context.interaction.fullscreenActive)) {
-            return 1024;
+            return DEFAULT_WIDGET_WIDTH;
         } else {
             return window.innerWidth;
         }
@@ -293,7 +293,7 @@ class CubeRendering {
 
     getHeight() {
         if (this.context.widgetMode && !(this.context.interaction && this.context.interaction.fullscreenActive)) {
-            return 768;
+            return DEFAULT_WIDGET_HEIGHT;
         } else {
             return window.innerHeight;
         }

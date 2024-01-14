@@ -25,7 +25,7 @@ import {
 import { MODULE_NAME, MODULE_VERSION } from './version';
 
 import { CubeClientContext } from './lexcube-client/src/client/client'
-import { Dimension } from './lexcube-client/src/client/constants';
+import { DEFAULT_WIDGET_HEIGHT, DEFAULT_WIDGET_WIDTH, Dimension } from './lexcube-client/src/client/constants';
 
 import '../css/widget.css';
 
@@ -156,7 +156,7 @@ const htmlCode = `<div class="fullscreen-wrapper nopointer noselect" style="text
 </div>
 </div>`;
 
-const template = `<div class="lexcube-body" style="width: fit-content; height: fit-content; position: relative;">${htmlCode}</div>`;
+const template = `<div class="lexcube-body" style="width: ${DEFAULT_WIDGET_WIDTH}px; height: ${DEFAULT_WIDGET_HEIGHT}px; position: relative;">${htmlCode}</div>`;
 
 
 export class Cube3DModel extends DOMWidgetModel {

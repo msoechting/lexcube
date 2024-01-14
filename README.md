@@ -83,12 +83,22 @@ w
 ```
 
 #### Note on Google Collab
-If you are using Google collab, you need to execute the following before running Lexcube:
+If you are using Google collab, you may need to execute the following before running Lexcube:
 
 ```python
 from google.colab import output
 output.enable_custom_widget_manager()
 ```
+
+#### Note on Juypter for VSCode
+If you are using Jupyter within VSCode, you may have to add the following to your settings before running Lexcube:
+```json
+    "jupyter.widgetScriptSources": [
+        "jsdelivr.com",
+        "unpkg.com"
+    ],
+```
+This allows the Lexcube JavaScript front-end files to be downloaded from these sources ([read more](https://github.com/microsoft/vscode-jupyter/wiki/IPyWidget-Support-in-VS-Code-Python)).
 
 ## Installation
 

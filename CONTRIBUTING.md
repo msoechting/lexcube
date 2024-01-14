@@ -71,7 +71,7 @@ pip install tbump
 tbump <new-version>
 ```
 
-## Publishing 
+## Building a new version 
 ```bash
 py -m pip install --upgrade build
 py -m build
@@ -80,3 +80,14 @@ py -m build
 - Make sure you have a clean working tree (including untracked files), since everything not ignored by the .gitignore will get packaged into the wheel.
 
 See also: https://packaging.python.org/en/latest/tutorials/packaging-projects/
+
+
+## Publishing
+1. Uploading to Pypi:
+```bash
+py -m twine upload --repository pypi dist/lexcube-*
+```
+2. Publishing on NPM: (important for working Google Colab implementation - not sure if relevant to anything else)
+```bash
+npm publish
+```

@@ -2,217 +2,205 @@
     padding: 0px 0px;
 }
 
-.lexcube-body {
+div.lexcube-body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: hidden;
     margin: 0px;
     background-color: black;
 }
 
-.lexcube-body {
-    .parameter-select {
-        max-width: 300px;
-    }
+div.lexcube-body div.parameter-select {
+    max-width: 300px;
+}
 
-    .ui-normal {
-        padding: 0.5em 0.7em 0.5em 0.7em;
-        background-color: rgba(5, 9, 28, 0.97);
-        border-radius: 5px;
-        border-style: solid;
-        border-color: white;
-        border-width: 2px;
-        color: #eeeeee;
-    }
+div.lexcube-body div.ui-normal {
+    padding: 0.5em 0.7em 0.5em 0.7em;
+    background-color: rgba(5, 9, 28, 0.97);
+    border-radius: 5px;
+    border-style: solid;
+    border-color: white;
+    border-width: 2px;
+    color: #eeeeee;
+}
 
-    .axis-label-parent {
-        position: absolute;
-        -moz-transition: all 0.05s ease-out;
-        transition: all 0.05s ease-out;
-        font-size: small;
-    }
+div.lexcube-body div.axis-label-parent {
+    position: absolute;
+    -moz-transition: all 0.05s ease-out;
+    transition: all 0.05s ease-out;
+    font-size: small;
+}
 
-    video {
-        border: 2px dashed #fff;
-        margin: 12px;
-    }
+div.lexcube-body video {
+    border: 2px dashed #fff;
+    margin: 12px;
+}
 
-    .axis-label {
-        top: 50%;
-        left: 50%;
-    }
+div.lexcube-body div.axis-label {
+    top: 50%;
+    left: 50%;
+}
 
-    .hover-info-ui {
-        align-self: flex-start;
-        margin-bottom: 10px;
-        display: none;
-    }
+div.lexcube-body div.hover-info-ui {
+    align-self: flex-start;
+    margin-bottom: 10px;
+    display: none;
+}
 
-    .color-scale {
-        align-self: self-start;
-    }
+div.lexcube-body div.color-scale {
+    align-self: self-start;
+}
 
-    .color-scale-unit-label {
-        color: white;
-        font-weight: bold;
-    }
+div.lexcube-body div.color-scale-unit-label {
+    color: white;
+    font-weight: bold;
+}
 
-    .color-scale-labels {
-        color: white;
-        width: 100%;
-        height: 20px;
-        margin-bottom: 5px;
-        justify-content: space-between;
-        display: flex;
-    }
+div.lexcube-body div.color-scale-labels {
+    color: white;
+    width: 100%;
+    height: 20px;
+    margin-bottom: 5px;
+    justify-content: space-between;
+    display: flex;
+}
 
-    .options-ui {
-        position: absolute;
-        left: 1.5%;
-        top: 1.5%;
-        overflow-y: auto;
-        overflow-x: hidden;
-        max-height: 95%;
-    }
+div.lexcube-body div.options-ui {
+    position: absolute;
+    left: 1.5%;
+    top: 1.5%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 95%;
+}
 
-    .toolbar-ui {
-        position: absolute;
-        right: 1.5%;
-        top: 1.5%;
-        display: flex;
-    }
+div.lexcube-body div.toolbar-ui {
+    position: absolute;
+    right: 1.5%;
+    top: 1.5%;
+    display: flex;
+}
 
-    .toolbar-ui-button {
-        width: 40px;
-        height: 40px;
-        margin-left: 15px;
-        cursor: pointer;
-    }
+div.lexcube-body div.toolbar-ui-button {
+    width: 40px;
+    height: 40px;
+    margin-left: 15px;
+    cursor: pointer;
+}
 
-    .filter-black-to-white {
-        filter: invert(97%) sepia(0%) saturate(0%) hue-rotate(24deg) brightness(110%) contrast(103%);
-    }
-
-    .filter-black-to-grey {
-        filter: invert(99%) sepia(87%) saturate(26%) hue-rotate(178deg) brightness(119%) contrast(87%);
-    }
-
-    .bottom-left-ui {
-        position: absolute;
-        left: 1.5%;
-        bottom: 1.5%;
-    }
+div.lexcube-body div.bottom-left-ui {
+    position: absolute;
+    left: 1.5%;
+    bottom: 1.5%;
+}
 
 
-    .top-left-ui {
-        position: absolute;
-        left: 2.5%;
-        top: 2.5%;
-    }
+div.lexcube-body div.top-left-ui {
+    position: absolute;
+    left: 2.5%;
+    top: 2.5%;
+}
 
-    .dataset-info-corner {
-        position: absolute;
-        right: 0px;
-        bottom: 0px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 0.2em 0.4em 0.2em 0.4em;
-        display: inline-block;
-        color: grey;
-        text-align: right;
-    }
+div.lexcube-body div.dataset-info-corner {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.2em 0.4em 0.2em 0.4em;
+    display: inline-block;
+    color: grey;
+    text-align: right;
+}
 
-    .dataset-info-window {
-        padding: 0.7em 0.9em 0.7em 0.9em;
-        border-radius: 8px;
-        max-width: min(1024px, 75%);
-        max-height: 90%;
-    }
+div.lexcube-body div.dataset-info-window {
+    padding: 0.7em 0.9em 0.7em 0.9em;
+    border-radius: 8px;
+    max-width: min(1024px, 75%);
+    max-height: 90%;
+}
 
-    .flex-col-center {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
+div.lexcube-body div.flex-col-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
 
-    .dataset-info-wrapper {
-        display: none;
-        background-color: rgba(0, 0, 0, 0.404);
-        z-index: 3;
-    }
+div.lexcube-body div.dataset-info-wrapper {
+    display: none;
+    background-color: rgba(0, 0, 0, 0.404);
+    z-index: 3;
+}
 
-    .btn-group button.selected {
-        border: 2px solid white;
-    }
+div.lexcube-body div.btn-group button.selected {
+    border: 2px solid white;
+}
 
-    .btn-group button {
-        background-size: 101% auto;
-        border: 2px solid black;
-        color: white;
-        cursor: pointer;
-        width: 100%;
-        display: block;
-        max-height: 60px;
-        min-height: 30px;
-        margin-top: 3px;
-    }
+div.lexcube-body div.btn-group button {
+    background-size: 101% auto;
+    border: 2px solid black;
+    color: white;
+    cursor: pointer;
+    width: 100%;
+    display: block;
+    max-height: 60px;
+    min-height: 30px;
+    margin-top: 3px;
+}
 
-    .btn-group button:hover {
-        border: 2px solid blueviolet;
-    }
+div.lexcube-body div.btn-group button:hover {
+    border: 2px solid blueviolet;
+}
 
-    .noselect {
-        -webkit-touch-callout: none;
-        /* iOS Safari */
-        -webkit-user-select: none;
-        /* Safari */
-        -khtml-user-select: none;
-        /* Konqueror HTML */
-        -moz-user-select: none;
-        /* Old versions of Firefox */
-        -ms-user-select: none;
-        /* Internet Explorer/Edge */
-        user-select: none;
-        /* Non-prefixed version, currently
-                                      supported by Chrome, Edge, Opera and Firefox */
-    }
+div.lexcube-body div.noselect {
+    -webkit-touch-callout: none;
+    /* iOS Safari */
+    -webkit-user-select: none;
+    /* Safari */
+    -khtml-user-select: none;
+    /* Konqueror HTML */
+    -moz-user-select: none;
+    /* Old versions of Firefox */
+    -ms-user-select: none;
+    /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+}
 
-    .visible {
-        visibility: visible;
-        opacity: 1;
-        /* transition: opacity 2s linear; */
-    }
+div.lexcube-body div.visible {
+    visibility: visible;
+    opacity: 1;
+    /* transition: opacity 2s linear; */
+}
 
-    .hidden {
-        visibility: hidden;
-        opacity: 0;
-        transition: visibility 0s 0.5s, opacity 0.5s ease-in;
-    }
+div.lexcube-body div.hidden {
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s 0.5s, opacity 0.5s ease-in;
+}
 
-    .slider {
-        padding: 0 16px;
-        margin: 45px 30px 5px 30px;
-    }
+div.lexcube-body div.slider {
+    padding: 0 16px;
+    margin: 45px 30px 5px 30px;
+}
 
-    .nopointer {
-        pointer-events: none;
-    }
+div.lexcube-body div.nopointer {
+    pointer-events: none;
+}
 
-    .fullscreen-wrapper {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-    }
+div.lexcube-body div.fullscreen-wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
 
-    .status-message {
-        display: inline-block;
-        background-color: rgba(61, 61, 61, 0.5);
-        padding: 0.5em 0.7em 0.5em 0.7em;
-        border-radius: 1px;
-        color: white;
-        z-index: 50;
-    }
-
+div.lexcube-body div.status-message {
+    display: inline-block;
+    background-color: rgba(61, 61, 61, 0.5);
+    padding: 0.5em 0.7em 0.5em 0.7em;
+    border-radius: 1px;
+    color: white;
+    z-index: 50;
 }
 
 .lexcube-body button {
@@ -237,3 +225,11 @@
     width: 100%;
     height: 100%;
 }
+
+/* Fix white background in VSCode Jupyter */
+.cell-output-ipywidget-background {
+    background-color: transparent !important;
+}
+.jp-OutputArea-output {
+    background-color: transparent;
+}  
