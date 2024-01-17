@@ -128,7 +128,8 @@ On the cube, the dimensions are visualized as follow: X from left-to-right (0 to
     - Click and drag the mouse cursor
     - On touch devices: touch and drag
 - Moving over the cube with your cursor will show a tooltip in the bottom left about the pixel under the cursor.
-- For more precise input, you can use the sliders provided by `w.show_sliders()`.
+- For more precise input, you can use the sliders provided by `w.show_sliders()`:
+![Sliders](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/sliders.png)
 
 
 ## Range Boundaries
@@ -276,7 +277,7 @@ Lexcube uses lots of amazing open-source software, including:
 * WebSocket communication: [Socket.io](https://socket.io/)
 
 ## Development Installation & Guide
-See [CONTRIBUTE.md](CONTRIBUTE.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 
 ## License
