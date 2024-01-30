@@ -31,11 +31,14 @@ Example notebooks can be found in the [examples](https://github.com/msoechting/l
 
 When using Lexcube in your research, please cite:
 ```bibtex
-@article{soechting2023lexcube,
+@ARTICLE{soechting2024lexcube,
   author={Söchting, Maximilian and Mahecha, Miguel D. and Montero, David and Scheuermann, Gerik},
   journal={IEEE Computer Graphics and Applications}, 
   title={Lexcube: Interactive Visualization of Large Earth System Data Cubes}, 
-  year={2023},
+  year={2024},
+  volume={44},
+  number={1},
+  pages={25-37},
   doi={10.1109/MCG.2023.3321989}
 }
 ```
