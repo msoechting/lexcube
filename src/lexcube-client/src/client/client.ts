@@ -129,9 +129,10 @@ class CubeClientContext {
     }
 
     async startup() {
+        this.networking.connect();
         await this.interaction.startup();
         this.rendering.startup();
-        await this.networking.connect();
+        this.networking.postStartup();
         this.postStartup();
     }
     

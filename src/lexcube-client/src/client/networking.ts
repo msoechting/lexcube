@@ -39,14 +39,20 @@ class Networking {
         this.tileCache = new Map<string, any>();
     }
 
-    async connect() {
+    connect() {
+        if (this.context.widgetMode) {
+            return;
+        }
+        this.connectTileWebsockets();
+        if (this.context.orchestrationMinionMode || this.context.orchestrationMasterMode) {
+            this.connectOrchestratorChannel();
+        }
+    }
+
+    postStartup() {
         if (this.context.widgetMode) {
             this.widgetVersionCheck();
             return;
-        }
-        await this.connectTileWebsockets();
-        if (this.context.orchestrationMinionMode || this.context.orchestrationMasterMode) {
-            this.connectOrchestratorChannel();
         }
     }
 

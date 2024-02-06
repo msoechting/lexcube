@@ -21,7 +21,10 @@
 import datetime
 import math
 import asyncio
-from traitlets import Unicode, Dict, Float, Union, List, Int, validate, TraitError, Bool, Tuple
+from traitlets import Unicode, Dict, Float, List, Int, validate, TraitError, Bool, Tuple
+import traitlets
+from typing import Union
+
 from ._frontend import module_name, module_version
 import ipywidgets as widgets
 from lexcube.lexcube_server.src.lexcube_widget import start_tile_server_in_widget_mode
@@ -56,7 +59,7 @@ class Cube3DWidget(widgets.DOMWidget):
     request_progress = Dict().tag(sync=True)
     vmin = Float(allow_none=True).tag(sync=True)
     vmax = Float(allow_none=True).tag(sync=True)
-    cmap = Union([Unicode(), List()], allow_none=True).tag(sync=True)
+    cmap = traitlets.Union([Unicode(), List()], allow_none=True).tag(sync=True)
     xlim = Tuple(Int(), Int(), default_value=(-1, -1)).tag(sync=True)
     ylim = Tuple(Int(), Int(), default_value=(-1, -1)).tag(sync=True)
     zlim = Tuple(Int(), Int(), default_value=(-1, -1)).tag(sync=True)
@@ -67,7 +70,7 @@ class Cube3DWidget(widgets.DOMWidget):
 
     isometric_mode = Bool(False).tag(sync=True)
 
-    def __init__(self, data_source, cmap: str | list | None = None, vmin: float | None = None, vmax: float | None = None, isometric_mode: bool = False, use_lexcube_chunk_caching: bool = True, **kwargs):
+    def __init__(self, data_source, cmap: Union[str, list, None] = None, vmin: Union[float, None] = None, vmax: Union[float, None] = None, isometric_mode: bool = False, use_lexcube_chunk_caching: bool = True, **kwargs):
         super().__init__(**kwargs)
         self.cmap = cmap
         self.vmin = vmin

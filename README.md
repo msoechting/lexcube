@@ -29,7 +29,7 @@ Example notebooks can be found in the [examples](https://github.com/msoechting/l
 
 ## Attribution
 
-When using Lexcube in your research, please cite:
+When using Lexcube and/or generated images, please acknowledge/cite:
 ```bibtex
 @ARTICLE{soechting2024lexcube,
   author={Söchting, Maximilian and Mahecha, Miguel D. and Montero, David and Scheuermann, Gerik},
@@ -101,7 +101,7 @@ If you are using Jupyter within VSCode, you may have to add the following to you
         "unpkg.com"
     ],
 ```
-This allows the Lexcube JavaScript front-end files to be downloaded from these sources ([read more](https://github.com/microsoft/vscode-jupyter/wiki/IPyWidget-Support-in-VS-Code-Python)).
+If you are working on a remote server in VSCode, do not forget to set this setting also there! This allows the Lexcube JavaScript front-end files to be downloaded from these sources ([read more](https://github.com/microsoft/vscode-jupyter/wiki/IPyWidget-Support-in-VS-Code-Python)).
 
 ## Installation
 

@@ -42,6 +42,7 @@ import psutil
 import xarray as xr
 import zfpy
 from dask.cache import Cache
+from typing import Union
 
 UNCOMPRESSED_SUFFIX = "_uncompressed"
 ANOMALY_PARAMETER_ID_SUFFIX = "_lxc_anomaly"
@@ -56,7 +57,7 @@ TILE_VERSION = 2
 TILE_FORMAT_MAGIC_BYTES = "lexc".encode("utf-8") # 6c 65 78 63, magic bytes to recognize lexcube tiles
 
 class DataSourceProxy:
-    def __init__(self, data_source: np.ndarray | xr.DataArray) -> None:
+    def __init__(self, data_source: Union[xr.DataArray, np.ndarray]) -> None:
         self.data_source = data_source
         self.cache_chunks = type(data_source) == xr.DataArray and data_source.chunks and len(data_source.chunks) > 0
         self.shape = self.data_source.shape
@@ -109,7 +110,7 @@ class DataSourceProxy:
             self.chunk_cache[chunk_key] = self.data_source[slices].values
         return self.chunk_cache[chunk_key]
 
-    def validate_slice(self, s: slice | int, dimension: int):
+    def validate_slice(self, s: Union[slice, int], dimension: int):
         if type(s) == int:
             s = slice(s, s + 1)
         return slice(max(s.start, 0), min(s.stop, self.shape[dimension]))
@@ -152,7 +153,7 @@ class TileCompressor:
     def decompress_nan_mask(self, data: bytes) -> bytes:
         return self.nan_mask_compressor.decode(data)
     
-    def get_tile_data_compressor(self, use_lossless_override: (None | bool) = None):
+    def get_tile_data_compressor(self, use_lossless_override: Union[bool, None] = None):
         lossless = self.compress_lossless if use_lossless_override == None else use_lossless_override
         if lossless:
             return self.tile_data_compressor_lossless
@@ -164,7 +165,7 @@ class TileCompressor:
             self.tile_data_compressor_default.tolerance = self.anomaly_compression_tolerance if is_anomaly_tile else self.default_compression_tolerance
         return self.get_tile_data_compressor().encode(tile_data)
         
-    def decompress_tile_data(self, tile_data: bytes, use_lossless_override: (None | bool) = None) -> bytes:
+    def decompress_tile_data(self, tile_data: bytes, use_lossless_override: Union[bool, None] = None) -> bytes:
         return self.get_tile_data_compressor(use_lossless_override).decode(tile_data)
 
 
@@ -241,21 +242,20 @@ def patch_data(data: np.ndarray, dataset_id: str, parameter: str, dataset_config
     if parameter == "snow_water_equivalent":
         data = np.where(data==-1, np.nan, data) # -1 = Oceans = NaN
         data = np.where(data==-2, 0, data) # -2 = mountains or something...
-    if dataset_config and dataset_config.flipped_y:
-        data = np.flip(data, axis=1)
     return data
 
-def patch_dataset(ds: xr.DataArray | np.ndarray):
+def patch_dataset(ds: Union[xr.DataArray, xr.Dataset, np.ndarray]):
     if type(ds) == np.ndarray:
         return ds
     # Some datasets from xee (Google Earth Engine) have (time, lon, lat) dimension order, fix that here:
-    if ds.dims[1] in LONGITUDE_DIMENSION_NAMES and ds.dims[2] in LATITUDE_DIMENSION_NAMES:
-        ds = ds.transpose(ds.dims[0], ds.dims[2], ds.dims[1])
+    dims = list(ds.dims)
+    if dims[1] in LONGITUDE_DIMENSION_NAMES and dims[2] in LATITUDE_DIMENSION_NAMES:
+        ds = ds.transpose(dims[0], dims[2], dims[1])
     # For data sets where the latitude is sorted by descending values (turning the world upside down), flip that:
-    if ds.dims[1] in LATITUDE_DIMENSION_NAMES:
-        lat_values = ds[ds.dims[1]]
+    if dims[1] in LATITUDE_DIMENSION_NAMES:
+        lat_values = ds[dims[1]]
         if lat_values[0] < lat_values[len(lat_values) - 1]:
-            ds = np.flip(ds, axis=1)
+            ds = ds.sortby(dims[1], ascending=False)
     return ds
 
 def open_dataset(config: ServerConfig, path: str):
@@ -288,7 +288,6 @@ class DatasetConfig:
         self.calculate_anomalies = bool(dataset_config.get("calculateYearlyAnomalies") or False)
         self.force_tile_generation = bool(dataset_config.get("forceTileGeneration") or False) 
         self.max_lod = int(dataset_config.get("overrideMaxLod") or -1) 
-        self.flipped_y = bool(dataset_config.get("flippedY") or False) 
         self.use_offline_metadata = bool(dataset_config.get("useOfflineMetadata") or False) 
         self.min_max_values_approximate_only = bool(dataset_config.get("approximateMinMaxValues") or True) 
 
@@ -381,9 +380,6 @@ class DatasetMetadata:
             "y": get_dimension_labels(data, self.y_dimension_name, self.y_dimension_type),
             "z": get_dimension_labels(data, self.z_dimension_name, self.z_dimension_type)
         }
-
-        if dataset.dataset_config.flipped_y:
-            self.axis_labels["y"] = self.axis_labels["y"][::-1]
 
 class ParameterMetadataParser:
     def __init__(self, config: ServerConfig, min_max_values_approximate_only: bool, dataset_path: str, dataset_id: str) -> None:
@@ -557,7 +553,6 @@ class Dataset:
         self.x_max = -1
         self.y_max = -1
         self.z_max = -1
-        self.flipped_y = self.dataset_config.flipped_y
         self.tile_size = tile_size
         self.use_offline_metadata = self.dataset_config.use_offline_metadata
         self.meta_data = DatasetMetadata()
@@ -817,7 +812,7 @@ class Tile:
     def get_hash_key(self):
         return "-".join([self.dataset_id, self.parameter, str(self.index_dimension.value), str(self.index_value), str(self.lod), str(self.x), str(self.y)])
 
-    def generate_from_data(self, source_data: np.ndarray | xr.DataArray | DataSourceProxy, tile_compressor: TileCompressor, z_offset: int = 0, added_compression_error: float = 0.0, resample_resolution: int = 1, compress_lossless: bool = False):
+    def generate_from_data(self, source_data: Union[xr.DataArray, np.ndarray, DataSourceProxy], tile_compressor: TileCompressor, z_offset: int = 0, added_compression_error: float = 0.0, resample_resolution: int = 1, compress_lossless: bool = False):
         lod_factor = pow(2, self.lod)
         inverse_lod_factor = 1 / lod_factor
         lod_tile_size = lod_factor * self.tile_size
@@ -887,7 +882,7 @@ class Tile:
     def get_tile_metadata_bytes(self, resample_resolution: int, nan_mask_length: int, max_error_or_magic_number: float):
         return TILE_FORMAT_MAGIC_BYTES + struct.pack("<I", TILE_VERSION) + struct.pack("<I", resample_resolution) + struct.pack("<I", nan_mask_length) + struct.pack("<d", max_error_or_magic_number)        
     
-    def compress_data(self, source_values: np.ndarray | xr.DataArray, tile_compressor: TileCompressor, resample_resolution: int = 1, added_compression_error: float = 0.0):
+    def compress_data(self, source_values: Union[xr.DataArray, np.ndarray], tile_compressor: TileCompressor, resample_resolution: int = 1, added_compression_error: float = 0.0):
         if np.all(np.isnan(source_values)):
             return self.get_tile_metadata_bytes(0, 0, NAN_TILE_MAGIC_NUMBER)
         # if np.any(np.isnan(source_values)):
@@ -1027,7 +1022,7 @@ class TileServer:
             total = sum(c[1] for c in current.values())
             self.widget_update_progress([done, total])
 
-    def startup_widget(self, data_source: xr.DataArray | np.ndarray, use_lexcube_chunk_caching: bool):
+    def startup_widget(self, data_source: Union[xr.DataArray, np.ndarray], use_lexcube_chunk_caching: bool):
         if type(data_source) == xr.DataArray and not data_source.chunks:
             print("Xarray input object does not have chunks. You can re-open with 'chunks={}' to enable dask for caching and progress reporting functionality - but may be overall slower for small data sets.")
         dask_cache = Cache(2e9)  # Leverage two gigabytes of memory

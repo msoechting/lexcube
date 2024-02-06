@@ -16,12 +16,13 @@
 
 from __future__ import annotations
 from .tile_server import TileServer, calculate_max_lod, API_VERSION, get_dimension_labels
+from typing import Union
 import ipywidgets as widgets
 import numpy as np
 import xarray as xr
 
 
-def start_tile_server_in_widget_mode(widget: widgets.DOMWidget, data_source: xr.DataArray | np.ndarray, use_lexcube_chunk_caching: bool):
+def start_tile_server_in_widget_mode(widget: widgets.DOMWidget, data_source: Union[xr.DataArray, np.ndarray], use_lexcube_chunk_caching: bool):
     if type(data_source) not in [xr.DataArray, np.ndarray]:
         print("Error: Input data is not xarray.DataArray or numpy.ndarray")
         raise Exception("Error: Input data is not xarray.DataArray or numpy.ndarray")
