@@ -45,12 +45,14 @@ When using Lexcube and/or generated images, please acknowledge/cite:
 Lexcube is a project by Maximilian Söchting at the [RSC4Earth](https://www.rsc4earth.de/) at Leipzig University, advised by Prof. Dr. Miguel D. Mahecha and Prof. Dr. Gerik Scheuermann. Thanks to the funding provided by ESA through DeepESDL and DFG through the NFDI4Earth pilot projects!
 
 ## How to Use Lexcube
+### Example Notebooks
 If you are new to Lexcube, try the [general introduction notebook](https://github.com/msoechting/lexcube/blob/main/examples/1_introduction.ipynb) which demonstrates how to visualize a remote Xarray data set.
 
 There are also specific example notebooks for the following use cases:
 - [Visualizing Google Earth Engine data - using xee](https://github.com/msoechting/lexcube/blob/main/examples/4_google_earth_engine.ipynb)
-- [Generating and visualizing a spectral index data cube from scratch - using cubo and spyndex](https://github.com/msoechting/lexcube/blob/main/examples/3_spectral_indices_with_cubo_and_spyndex.ipynb)
-- [Visualizing Numpy data](examples/2_numpy.ipynb)
+- [Generating and visualizing a spectral index data cube from scratch - using cubo and spyndex, with data from Microsoft Planetary Computer](https://github.com/msoechting/lexcube/blob/main/examples/3_spectral_indices_with_cubo_and_spyndex.ipynb)
+- [Generating and visualizing a spectral index data cube - with data from OpenEO](https://github.com/msoechting/lexcube/blob/main/examples/5_spectral_indices_with_open_eo.ipynb)
+- [Visualizing Numpy data](https://github.com/msoechting/lexcube/blob/main/examples/2_numpy.ipynb)
 
 ### Minimal Examples for Getting Started 
 #### Visualizing Xarray Data
