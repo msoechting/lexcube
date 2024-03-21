@@ -45,7 +45,7 @@ dependencies = [
     "zarr>=2.14.2",
     "zfpy>=1.0.0",
 ]
-version = "0.4.14"
+version = "0.4.15"
 
 [project.optional-dependencies]
 docs = [
@@ -109,7 +109,7 @@ build_cmd = "build:prod"
 github_url = "https://github.com/msoechting/lexcube/"
 
 [tool.tbump.version]
-current = "0.4.14"
+current = "0.4.15"
 
 # Example of a semver regexp.
 # Make sure this matches current_version before

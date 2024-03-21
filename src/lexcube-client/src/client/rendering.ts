@@ -693,7 +693,7 @@ class CubeRendering {
             return total > visibilityThreshold;
         });
 
-        let labelDirectionDimensions: Dimension[] = [-1, -1, -1];
+        let labelDirectionDimensions: Dimension[] = [0, 0, 0];
 
         for (let dimension of dimensionsToLabel) {
             const dominantFace = this.getVisuallyDominantFace();

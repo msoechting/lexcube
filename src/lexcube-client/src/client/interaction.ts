@@ -545,8 +545,12 @@ class CubeSelection {
         this.displayOffsets = [];
         const dims = this.context.interaction.cubeDimensions;
         const is = this.context.interaction.initialSelectionState;
-        this.ySelectionRange = new ParameterRange(0, dims.yParameterRange.max);
-        this.xSelectionRange = new ParameterRange(0, context.interaction.roundDownToSparsity(dims.xParameterRange.max / context.interaction.XYdataAspectRatio));
+        this.ySelectionRange = dims.yParameterRange.clone();
+        if (!context.widgetMode) {
+            this.xSelectionRange = new ParameterRange(0, context.interaction.roundDownToSparsity(dims.xParameterRange.max / context.interaction.XYdataAspectRatio));
+        } else {
+            this.xSelectionRange = dims.xParameterRange.clone();
+        }
         if (context.interaction.cubeTags.includes(CubeTag.ESDC)) {
             const l = this.xSelectionRange.length();
             const offset = this.context.interaction.roundUpToSparsity(l * 0.83);
@@ -1415,7 +1419,6 @@ class CubeInteraction {
         }
         let uv = r[0].uv! || new Vector2(0.5, 0.5);
         if (eventPositions.length == 2) {
-            const localEventPosition = this.getLocalEventPosition(eventPositions[0]);
             const middle = this.getLocalEventPosition(eventPositions[0]).add(this.getLocalEventPosition(eventPositions[1])).multiplyScalar(0.5);
             const middleRay = this.context.rendering.raycastWindowPosition(middle.x, middle.y);
             if (middleRay && middleRay[0].face?.materialIndex == this.currentZoomFace) {
@@ -2454,7 +2457,7 @@ class CubeInteraction {
         this.cubeDimensions.zParameterRange.set(0, this.cubeDimensions.z.steps - 1);
         this.cubeDimensions.yParameterRange.set(0, this.cubeDimensions.y.steps - 1);
         this.cubeDimensions.xParameterRange.set(0, this.cubeDimensions.x.steps - 1);
-        this.XYdataAspectRatio = this.cubeDimensions.x.steps / this.cubeDimensions.y.steps;
+        this.XYdataAspectRatio = this.context.widgetMode ? 1.0 : this.cubeDimensions.x.steps / this.cubeDimensions.y.steps;
         this.context.log("Cube tags:", this.cubeTags.map(a => CubeTag[a]));
         this.updateAvailableParametersUi();
 
@@ -2818,9 +2821,13 @@ class CubeInteraction {
         const newDisplayOffset = oldDisplayOffset.clone();
 
         // per 200 zoomDelta, halve visible dimensions
+        const previousZoomFactor = this.currentZoomFactor[Math.floor(face / 2)];
         this.currentZoomFactor[Math.floor(face / 2)] = clamp(this.currentZoomFactor[Math.floor(face / 2)] + (zoomDelta / 200), 1.0, MAX_ZOOM_FACTOR);
         const zoomFactor = Math.pow(0.5, this.currentZoomFactor[Math.floor(face / 2)] - 1.0);
+        const zoomFactorDifference = Math.abs(this.currentZoomFactor[Math.floor(face / 2)] - previousZoomFactor);
+        const zoomFactorChanged = Math.abs(zoomFactorDifference) > 0.01;
         let newCenterPoint = new Vector2();
+        const oldCenterPoint = oldDisplayOffset.clone().add(oldDisplaySize.clone().multiplyScalar(0.5));
         if (immediate) {
             let normalizeFactor = 1.0;
             if (Math.sign(zoomDelta) == 1) { // zoom in 
@@ -2834,8 +2841,8 @@ class CubeInteraction {
                 this.currentZoomOldCenterPoint = oldDisplayOffset.clone().add(oldDisplaySize.clone().multiplyScalar(0.5));
                 this.currentZoomNewCenterPoint = oldDisplayOffset.clone().add(oldDisplaySize.clone().multiply(focusUv));
             }
-            const zoomFactorDifference = clamp(Math.abs(this.currentZoomFactor[Math.floor(face / 2)] - this.previousZoomFactor[Math.floor(face / 2)]), 0.0, 2.0);
-            const p = zoomFactorDifference / 2.0;
+            const zoomFactorDistance = clamp(zoomFactorDifference, 0.0, 2.0);
+            const p = zoomFactorDistance / 2.0;
             newCenterPoint = this.currentZoomOldCenterPoint.clone().multiplyScalar(1-p).add(this.currentZoomNewCenterPoint.clone().multiplyScalar(p));
         }
 
@@ -2854,7 +2861,8 @@ class CubeInteraction {
         }
 
         const relativeOffset = newDisplaySize.clone().multiplyScalar(0.5);
-        newDisplayOffset.copy(newCenterPoint).sub(relativeOffset);
+        const centerPoint = zoomFactorChanged ? newCenterPoint : oldCenterPoint;
+        newDisplayOffset.copy(centerPoint).sub(relativeOffset);
 
         if (this.cubeTags.includes(CubeTag.Global) && (face == CubeFace.Front || face == CubeFace.Back || face == CubeFace.Top || face == CubeFace.Bottom)) {
             newDisplayOffset.y = clamp(newDisplayOffset.y, this.getMinimumDisplayOffset(face).y, this.getMaximumDisplayOffset(face, newDisplaySize).y)

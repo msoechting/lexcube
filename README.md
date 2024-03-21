@@ -80,8 +80,8 @@ import lexcube
 import xarray as xr
 import ee
 ee.Authenticate()
-ee.Initialize(opt_url='https://earthengine-highvolume.googleapis.com')
-ds = xr.open_dataset('ee://ECMWF/ERA5_LAND/HOURLY', engine='ee', crs='EPSG:4326', scale=0.25, chunks={})
+ee.Initialize(opt_url="https://earthengine-highvolume.googleapis.com")
+ds = xr.open_dataset("ee://ECMWF/ERA5_LAND/HOURLY", engine="ee", crs="EPSG:4326", scale=0.25, chunks={})
 da = ds["temperature_2m"][630000:630003,2:1438,2:718]
 w = lexcube.Cube3DWidget(da)
 w
@@ -189,14 +189,26 @@ w.cmap = [[0.0, 0.0, 0.0], [1.0, 0.5, 0.5], [0.5, 1.0, 1.0]]
 
 ### Supported colormaps
 ```python
-Cmocean:"thermal","haline","solar","ice","gray","oxy","deep","dense","algae","matter","turbid","speed","amp","tempo","rain","phase","topo","balance","delta","curl","diff","tarn"
-PerceptuallyUniformSequential:"viridis","plasma","inferno","magma","cividis"
-Sequential:"Greys","Purples","Blues","Greens","Oranges","Reds","YlOrBr","YlOrRd","OrRd","PuRd","RdPu","BuPu","GnBu","PuBu","YlGnBu","PuBuGn","BuGn","YlGn"
-Sequential(2):"binary","gist_yarg","gist_gray","gray","bone","pink","spring","summer","autumn","winter","cool","Wistia","hot","afmhot","gist_heat","copper"
-Diverging:"PiYG","PRGn","BrBG","PuOr","RdGy","RdBu","RdYlBu","RdYlGn","Spectral","coolwarm","bwr","seismic",
-Cyclic:"twilight","twilight_shifted","hsv"
-Qualitative:"Pastel1","Pastel2","Paired","Accent","Dark2","Set1","Set2","Set3","tab10","tab20","tab20b","tab20c"
-Miscellaneous:"flag","prism","ocean","gist_earth","terrain","gist_stern","gnuplot","gnuplot2","CMRmap","cubehelix","brg","gist_rainbow","rainbow","jet","nipy_spectral","gist_ncar"
+Cmocean:
+- "thermal", "haline", "solar", "ice", "gray", "oxy", "deep", "dense", "algae", "matter", "turbid", "speed", "amp", "tempo", "rain", "phase", "topo", "balance", "delta", "curl", "diff", "tarn"
+Proplot custom colormaps:
+- "Glacial", "Fire", "Dusk", "DryWet", "Div", "Boreal", "Sunset", "Sunrise", "Stellar", "NegPos", "Marine"
+Scientific Colormaps by Crameri:
+- "acton", "bam", "bamako", "bamO", "batlow", "batlowK", "batlowW", "berlin", "bilbao", "broc", "brocO", "buda", "bukavu", "cork", "corkO", "davos", "devon", "fes", "glasgow", "grayC", "hawaii", "imola", "lajolla", "lapaz", "lisbon", "lipari", "managua", "navia", "nuuk", "oleron", "oslo", "roma", "romaO", "tofino", "tokyo", "turku", "vanimo", "vik", "vikO"
+PerceptuallyUniformSequential:
+- "viridis", "plasma", "inferno", "magma", "cividis"
+Sequential:
+- "Greys", "Purples", "Blues", "Greens", "Oranges", "Reds", "YlOrBr", "YlOrRd", "OrRd", "PuRd", "RdPu", "BuPu", "GnBu", "PuBu", "YlGnBu", "PuBuGn", "BuGn", "YlGn"
+Sequential(2):
+- "binary", "gist_yarg", "gist_gray", "gray", "bone", "pink", "spring", "summer", "autumn", "winter", "cool", "Wistia", "hot", "afmhot", "gist_heat", "copper"
+Diverging:
+- "PiYG", "PRGn", "BrBG", "PuOr", "RdGy", "RdBu", "RdYlBu", "RdYlGn", "Spectral", "coolwarm", "bwr", "seismic",
+Cyclic:
+- "twilight", "twilight_shifted", "hsv"
+Qualitative:
+- "Pastel1", "Pastel2", "Paired", "Accent", "Dark2", "Set1", "Set2", "Set3", "tab10", "tab20", "tab20b", "tab20c"
+Miscellaneous:
+- "flag", "prism", "ocean", "gist_earth", "terrain", "gist_stern", "gnuplot", "gnuplot2", "CMRmap", "cubehelix", "brg", "gist_rainbow", "rainbow", "jet", "nipy_spectral", "gist_ncar"
 ```
 ## Save images
 You can save PNG images of the cube like this: 
@@ -267,14 +279,14 @@ Lexcube employs an alternative, more aggressive chunk caching mechanism in contr
 - Zoom interactions with the mousewheel may be difficult for data sets with very small ranges on some dimensions (e.g. 2-5).
 - Zoom interactions may behave unexpectedly when zooming on multiple cube faces subsequently.
 
-## Open-Source Attributions
+## Attributions
 
-Lexcube uses lots of amazing open-source software, including:
+Lexcube uses lots of amazing open-source software and packages, including:
 * Data access: [Xarray](https://docs.xarray.dev/en/stable/index.html) & [Numpy](https://numpy.org/)
 * Lossy floating-point compression: [ZFP](https://zfp.io/)
 * Client boilerplate: [TypeScript Three.js Boilerplate](https://github.com/Sean-Bradley/Three.js-TypeScript-Boilerplate) by Sean Bradley
 * Jupyter widget boilerplate: [widget-ts-cookiecutter](https://github.com/jupyter-widgets/widget-ts-cookiecutter)
-* Colormaps: [matplotlib](https://matplotlib.org) & [cmocean](https://matplotlib.org/cmocean/)
+* Colormaps: [matplotlib](https://matplotlib.org), [cmocean](https://matplotlib.org/cmocean/), [Scientific colour maps by Fabio Crameri](https://zenodo.org/records/8409685), [Proplot custom colormaps](https://github.com/proplot-dev/proplot)
 * 3D graphics engine: [Three.js](https://github.com/mrdoob/three.js/) (including the OrbitControls, which have been modified for this project)
 * Client bundling: [Webpack](https://webpack.js.org/)
 * UI sliders: [Nouislider](https://refreshless.com/nouislider/)
@@ -286,4 +298,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 
 ## License
-The Lexcube application core, the Lexcube Jupyter extension, and other portions of the official Lexcube distribution not explicitly licensed otherwise, are licensed under the GNU GENERAL PUBLIC LICENSE v3 or later (GPLv3+) -- see the 'COPYING' file in this directory for details.
+The Lexcube application core, the Lexcube Jupyter extension, and other portions of the official Lexcube distribution not explicitly licensed otherwise, are licensed under the GNU GENERAL PUBLIC LICENSE v3 or later (GPLv3+) -- see the "COPYING" file in this directory for details.
