@@ -73,7 +73,7 @@ tbump <new-version>
 
 ## Building a new version 
 ```bash
-py -m pip install --upgrade build
+py -m pip install --upgrade build twine pkginfo
 py -m build
 ```
 - Tip for Windows users: deactivate Windows Defender "real-time protection" to speed up builds and change your power plan if you are on a laptop.

@@ -14,6 +14,12 @@
 
 ---
 
+**NEW with version 0.4.16**: [Craft your own paper data cube!](#print-your-own-paper-data-cube)
+
+![Print template graphic](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/print-template.png)
+
+---
+
 Lexcube is a library for interactively visualizing three-dimensional floating-point data as 3D cubes in Jupyter notebooks. 
 
 Supported data formats:
@@ -26,6 +32,43 @@ Possible data sources:
 - Google Earth Engine ([using xee, see example notebook](https://github.com/msoechting/lexcube/blob/main/examples/4_google_earth_engine.ipynb))
 
 Example notebooks can be found in the [examples](https://github.com/msoechting/lexcube/tree/main/examples) folder. For a live demo, see also [lexcube.org](https://www.lexcube.org).
+
+---
+
+**Table of Contents**
+
+- [Attribution](#attribution)
+- [How to Use Lexcube](#how-to-use-lexcube)
+  - [Example Notebooks](#example-notebooks)
+  - [Minimal Examples for Getting Started](#minimal-examples-for-getting-started)
+    - [Visualizing Xarray Data](#visualizing-xarray-data)
+    - [Visualizing Numpy Data](#visualizing-numpy-data)
+    - [Visualizing Google Earth Engine Data](#visualizing-google-earth-engine-data)
+    - [Note on Google Collab](#note-on-google-collab)
+    - [Note on Juypter for VSCode](#note-on-juypter-for-vscode)
+- [Installation](#installation)
+- [Cube Visualization](#cube-visualization)
+- [Interacting with the Cube](#interacting-with-the-cube)
+- [Range Boundaries](#range-boundaries)
+- [Colormaps](#colormaps)
+  - [Supported colormaps](#supported-colormaps)
+- [Save figures](#save-figures)
+- [Print your own paper data cube](#print-your-own-paper-data-cube)
+- [Supported metadata](#supported-metadata)
+- [Troubleshooting](#troubleshooting)
+  - [The cube does not respond / API methods are not doing anything / Cube does not load new data](#the-cube-does-not-respond--api-methods-are-not-doing-anything--cube-does-not-load-new-data)
+  - [After installation/update, no widget is shown, only text](#after-installationupdate-no-widget-is-shown-only-text)
+  - [w.savefig breaks when batch-processing/trying to create many figures quickly](#wsavefig-breaks-when-batch-processingtrying-to-create-many-figures-quickly)
+  - [The layout of the widget looks very messed up](#the-layout-of-the-widget-looks-very-messed-up)
+  - ["Error creating WebGL context" or similar](#error-creating-webgl-context-or-similar)
+  - [Memory is filling up a lot when using a chunked dataset](#memory-is-filling-up-a-lot-when-using-a-chunked-dataset)
+- [Known bugs](#known-bugs)
+- [Attributions](#attributions)
+- [Development Installation \& Guide](#development-installation--guide)
+- [License](#license)
+
+---
+
 
 ## Attribution
 
@@ -43,6 +86,7 @@ When using Lexcube and/or generated images, please acknowledge/cite:
 }
 ```
 Lexcube is a project by Maximilian Söchting at the [RSC4Earth](https://www.rsc4earth.de/) at Leipzig University, advised by Prof. Dr. Miguel D. Mahecha and Prof. Dr. Gerik Scheuermann. Thanks to the funding provided by ESA through DeepESDL and DFG through the NFDI4Earth pilot projects!
+
 
 ## How to Use Lexcube
 ### Example Notebooks
@@ -210,7 +254,7 @@ Qualitative:
 Miscellaneous:
 - "flag", "prism", "ocean", "gist_earth", "terrain", "gist_stern", "gnuplot", "gnuplot2", "CMRmap", "cubehelix", "brg", "gist_rainbow", "rainbow", "jet", "nipy_spectral", "gist_ncar"
 ```
-## Save images
+## Save figures
 You can save PNG images of the cube like this: 
 ```python
 w.savefig(fname="cube.png", include_ui=True, dpi_scale=2.0)
@@ -223,6 +267,14 @@ If you want to edit multiple cubes into one picture, you may prefer an isometric
 
 ![Isometric vs. perspective camera comparison](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/isometric.png)
 
+## Print your own paper data cube
+You can generate a template to make your own paper data cube from your currently visible data cube like this:
+```python
+w.save_print_template()
+```
+In the opened dialog, you can download the print template as either PNG or SVG to your computer. You can also add a custom note to the print template, e.g. to remember specifics about the data set. Printing (recommended: thick paper or photo paper, e.g. 15x20cm), cutting and gluing will give you your own paper data cube for your desk:
+
+![Print template graphic](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/print-template.png)
 
 ## Supported metadata
 When using Xarray for the input data, the following metadata is automatically integrated into the visualization:

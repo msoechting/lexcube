@@ -92,9 +92,12 @@ class Cube3DWidget(widgets.DOMWidget):
         return Sliders(self, self._dims, continuous_update)
     
     def savefig(self, fname: str = "", include_ui: bool = True, dpi_scale: float = 2.0):
-        self.send( { "response_type": "download_request", "includeUi": include_ui, "filename": fname, "dpiscale": dpi_scale } )
+        self.send( { "response_type": "download_figure_request", "includeUi": include_ui, "filename": fname, "dpiscale": dpi_scale } )
         return 'When using Lexcube-generated images, please acknowledge/cite: M. Söchting, M. D. Mahecha, D. Montero and G. Scheuermann, "Lexcube: Interactive Visualization of Large Earth System Data Cubes," in IEEE Computer Graphics and Applications, vol. 44, no. 1, pp. 25-37, Jan.-Feb. 2024, doi: https://www.doi.org/10.1109/MCG.2023.3321989.'
-        
+
+    def save_print_template(self, fname: str = ""):
+        self.send( { "response_type": "download_print_template_request", "filename": fname } )
+        return 'When using Lexcube-generated images, please acknowledge/cite: M. Söchting, M. D. Mahecha, D. Montero and G. Scheuermann, "Lexcube: Interactive Visualization of Large Earth System Data Cubes," in IEEE Computer Graphics and Applications, vol. 44, no. 1, pp. 25-37, Jan.-Feb. 2024, doi: https://www.doi.org/10.1109/MCG.2023.3321989.'        
 
     @validate("xlim")
     def _valid_xlim(self, proposal):
