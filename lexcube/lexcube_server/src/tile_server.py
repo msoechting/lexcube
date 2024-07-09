@@ -462,8 +462,20 @@ class ParameterMetadataParser:
             if local_99quantile != np.nan:
                 local_99quantiles.append(local_99quantile)
 
-        median_of_1quantiles = np.median(local_1quantiles)
-        median_of_99quantiles = np.median(local_99quantiles)
+        median_of_1quantiles = np.nanmedian(local_1quantiles)
+        median_of_99quantiles = np.nanmedian(local_99quantiles)
+
+        # if any of the values are NaN, write error to print
+        if np.isnan(minimum_value) or np.isnan(maximum_value) or np.isnan(median_of_1quantiles) or np.isnan(median_of_99quantiles):
+            print(f"Warning: NaN values detected in min/max/quantile calculations for {parameter} - {minimum_value} - {maximum_value} - {median_of_1quantiles} - {median_of_99quantiles}, setting to min/max to 0 if nan and medians to min/max if nan.")
+            if np.isnan(minimum_value):
+                minimum_value = 0
+            if np.isnan(maximum_value):
+                maximum_value = 0
+            if np.isnan(median_of_1quantiles):
+                median_of_1quantiles = minimum_value
+            if np.isnan(median_of_99quantiles):
+                median_of_99quantiles = maximum_value
 
         # print(f"Min: {minimum_value} Max: {maximum_value} Accesses: {accesses}")
         return (float(minimum_value), float(maximum_value), float(median_of_1quantiles), float(median_of_99quantiles))

@@ -57,13 +57,13 @@
 
 
     <div class="toolbar-ui">
+        <div class="toolbar-ui-button fullscreen-button" title="Enter/exit fullscreen" style="background-image: url('fullscreen.svg')"></div>
+        <div class="toolbar-ui-button data-select-button" title="Options" onclick="let c = this.parentNode.parentNode.getElementsByClassName('options-ui')[0]; c.style.display = c.style.display == 'none' ? 'block' : 'none';" style="background-image: url('data-management.svg')"></div>
+        <div class="toolbar-ui-button animate-start-button" title="Start Animation" style="background-image: url('play.svg')"></div>
+        <div class="toolbar-ui-button animate-stop-button" title="Stop Animation" style="background-image: url('pause.svg');display:none;"></div>
         <div class="toolbar-ui-button download-image-button" title="Download Image" style="background-image: url('download.svg'); display: none;"></div>
         <div class="toolbar-ui-button download-template-button" title="Download Print Template" style="background-image: url('download-print-template.svg');"></div>
         <div class="toolbar-ui-button gps-button" title="Show Current Location on Cube" style="background-image: url('location.svg');"></div>
-        <div class="toolbar-ui-button animate-start-button" title="Start Animation" style="background-image: url('play.svg')"></div>
-        <div class="toolbar-ui-button animate-stop-button" title="Stop Animation" style="background-image: url('pause.svg');display:none;"></div>
-        <div class="toolbar-ui-button data-select-button" title="Options" onclick="let c = this.parentNode.parentNode.getElementsByClassName('options-ui')[0]; c.style.display = c.style.display == 'none' ? 'block' : 'none';" style="background-image: url('data-management.svg')"></div>
-        <div class="toolbar-ui-button fullscreen-button" title="Enter/exit fullscreen" style="background-image: url('fullscreen.svg')"></div>
     </div>
 
     <div class="flex-col-center nopointer noselect bottom-left-ui">
@@ -79,8 +79,9 @@
         </div>
     </div>
 
-    <div class="fullscreen-wrapper nopointer noselect" style="top: 15px; left: 15px;">
-        <img src="lexcube-logo.png" style="width: calc(max(300px, 17vw)); opacity: 0.9;"/>
+    <div class="fullscreen-wrapper nopointer noselect" style="top: 1.5%; left: 1.5%;">
+        <img src="lexcube-logo.png" style="opacity: 0.9; max-width: 40%; margin-left: -2px;
+        margin-top: -2px;max-height: 50px;"/>
     </div>
 
     <div class="noselect top-left-ui ui-normal jupyter-notification" onclick="this.style.display = 'none';localStorage.setItem('dismiss-jupyter', `${Date.now()}`);" style="padding: 1px;">
@@ -184,7 +185,7 @@
                 <div class="tutorial-mouse" style="display: none;">
                     <div style="margin-bottom: 5px;">1. Drag and scroll on the <b>background</b> to move and rotate the cube.</div>
                     <div style="margin-bottom: 5px;">2. Drag and scroll on the <b>cube</b> to interact with the data.</div>
-                    <video class="tutorial-video" onloadeddata="this.play();" playsinline loop muted controls>
+                    <video class="tutorial-video" onloadeddata="try { this.play(); } catch(e) {}" playsinline loop muted controls>
                         <source src="demo-mouse-an.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
@@ -192,7 +193,7 @@
                 <div class="tutorial-touch" style="display: none;">
                     <div style="margin-bottom: 5px;">1. Touch and drag on the <b>background</b> to move and rotate the cube.</div>
                     <div style="margin-bottom: 5px;">2. Touch and drag on the <b>cube</b> to interact with the data.</div>
-                    <video class="tutorial-video" onloadeddata="this.play();" playsinline loop muted controls>
+                    <video class="tutorial-video" onloadeddata="try { this.play(); } catch(e) {}" playsinline loop muted controls>
                         <source src="demo-touch-an.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
@@ -245,7 +246,7 @@
                 </div>
                 <div>Building your own data cube...</div>
             </div>
-            <div class="print-template-result-section" style="display: none;max-height: 100%;overflow-y: scroll;">
+            <div class="print-template-result-section" style="display: none;max-height: 100%;overflow-y: auto;">
                 <div class="flex-col-center" style="gap: 10px;text-align: center;height: 100%;">
                     <h1>Craft Your Data Cube!</h1>
                     <div>Print🖨️, fold📃, cut✂️ and glue🩹 to make your own crafted data cube. 🧊</div>
@@ -255,7 +256,7 @@
                         <a class="download-print-template-result-edit-note" style="font-size: larger;" href="#">Add custom note</a>
                     </div>
                     <div class="print-template-result"></div>
-                    <button style="font-size: larger; margin: 10px" onclick="const d = document.getElementsByClassName('print-template-result-wrapper')[0];d.style.display = 'none';">Close</button>
+                    <button style="font-size: larger; margin: 10px" onclick="const d = this.parentNode.parentNode.parentNode.parentNode;d.style.display = 'none';">Close</button>
                 </div>
             </div>
         </div>

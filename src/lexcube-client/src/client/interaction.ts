@@ -3100,7 +3100,9 @@ class CubeInteraction {
     showPrintTemplateLoader() {
         this.htmlPrintTemplateResultWrapper.style.display = "flex";
         this.htmlPrintTemplateLoadingSection.style.display = "flex";
-        this.htmlPrintTemplateLoaderVideo.play();
+        if (this.htmlPrintTemplateLoaderVideo) {
+            this.htmlPrintTemplateLoaderVideo.play();
+        }
         this.htmlPrintTemplateResultSection.style.display = "none";
     }
 
@@ -3108,9 +3110,17 @@ class CubeInteraction {
 
     async showPrintTemplateResult(svg: string) {
         this.context.log("Creating QR code link");
-        const qr = await QRCode.toDataURL(document.URL, { color: { dark: "#000", light: "#ffffff00" } });
-        svg = svg.replace("qrcode.png", qr);
-        svg = svg.replace("%dataset%", this.selectedCube.shortName);
+        if (this.context.widgetMode) {
+            svg = svg.replace("Link to your cube:", "");
+        } else {
+            const qr = await QRCode.toDataURL(document.URL, { color: { dark: "#000", light: "#ffffff00" } });
+            svg = svg.replace("qrcode.png", qr);
+        }
+        let datasetName = this.selectedCube.shortName;
+        if (datasetName.startsWith("<class")) {
+            datasetName = datasetName.substring(datasetName.lastIndexOf(".") + 1, datasetName.length - 2);
+        }
+        svg = svg.replace("%dataset%", datasetName);
         svg = svg.replace("%parameter%", this.selectedParameter.longName || this.selectedParameter.name);
 
         this.htmlPrintTemplateFirstNote = true;
@@ -3134,9 +3144,13 @@ class CubeInteraction {
     }
 
     async showNewPrintTemplateResult(svg: string) {
+        if (this.context.widgetMode) {
+            this.htmlPrintTemplateResult.style.maxHeight = "300px";
+        }
         if (this.htmlPrintTemplateDownloadButtonSvg.href) {
             URL.revokeObjectURL(this.htmlPrintTemplateDownloadButtonSvg.href);
         }
+        this.context.log("Creating print template SVG and PNG");
         let reader = new FileReader();
         reader.readAsDataURL(new Blob([svg], { type: 'image/svg+xml' }));
         reader.onload = (e) => {
@@ -3173,7 +3187,14 @@ class CubeInteraction {
             };
             svgImage.src = svgUrl;
         }
+    }
 
+    async getPrintTemplateSvg() {
+        if (this.context.widgetMode) {
+            return this.getHtmlElementByClassName("print-template-wrapper").innerHTML;
+        } else {
+            return await (await fetch("paper-cube-template-v3.svg")).text();
+        }
     }
 }
 

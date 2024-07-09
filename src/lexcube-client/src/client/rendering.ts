@@ -22,6 +22,7 @@ import { toPng } from 'html-to-image';
 import { COLORMAP_STEPS, CubeFace, DEFAULT_WIDGET_HEIGHT, DEFAULT_WIDGET_WIDTH, Dimension, getAddressedFacesOfDimension, getFacesOfIndexDimension, NAN_REPLACEMENT_VALUE, NOT_LOADED_REPLACEMENT_VALUE, TILE_SIZE } from './constants';
 import { CubeClientContext } from './client';
 
+
 class LabelPositionResult {
     visible: boolean = false;
     screenPositionMinLabel!: Vector2;
@@ -961,8 +962,8 @@ class CubeRendering {
         this.context.interaction.updateLabelPositions();
         this.requestRender();
         this.context.log("Reset camera & renderer, now generating print template", this.printTemplateResults.length);
-        let svg = await (await fetch("paper-cube-template-v3.svg")).text();
-        this.context.log("Got svg template", svg.length)
+        let svg = await this.context.interaction.getPrintTemplateSvg();
+        this.context.log("Got svg template", svg.length, svg.substring(0, 100));
         for (let i = 0; i < 6; i++) {
             svg = svg.replace(`current/${CubeFace[i].toLowerCase()}.png`, this.printTemplateResults[i]);
         }
