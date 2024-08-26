@@ -160,8 +160,8 @@ class CubeDimension {
         // }
         const indexLabel = this.indices[roundedIndex];
         if (this.type == CubeDimensionType.Time) {
-            const totalTimeSpanDays = ((this.indices[this.indices.length - 1] as Date).getTime() - (this.indices[0] as Date).getTime()) / (1000 * 60 * 60 * 24);
-            const secondsPerStep = ((this.indices[1] as Date).getTime() - (this.indices[0] as Date).getTime()) / (1000);
+            const totalTimeSpanDays = Math.abs(((this.indices[this.indices.length - 1] as Date).getTime() - (this.indices[0] as Date).getTime()) / (1000 * 60 * 60 * 24));
+            const secondsPerStep = Math.abs(((this.indices[1] as Date).getTime() - (this.indices[0] as Date).getTime()) / 1000);
             const daysPerStep = secondsPerStep / (60 * 60 * 24);
             const millisecondsRelevant = secondsPerStep < 1;
             return `${totalTimeSpanDays > 1 ? getDayString(indexLabel as Date) : ""} ${daysPerStep < 1 ? getTimeString(indexLabel as Date, millisecondsRelevant) : ""}`.trim();

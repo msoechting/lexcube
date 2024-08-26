@@ -40,7 +40,6 @@ import numcodecs
 import numpy as np
 import psutil
 import xarray as xr
-import zfpy
 from dask.cache import Cache
 from typing import Union
 
@@ -999,9 +998,11 @@ class ZfpCompressor:
         self.precision = -1
 
     def encode(self, data):
+        import zfpy
         return zfpy.compress_numpy(data, self.tolerance, self.rate, self.precision)
 
     def decode(self, data):
+        import zfpy
         return zfpy.decompress_numpy(data)
 
 class TileServer:
