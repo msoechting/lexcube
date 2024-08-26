@@ -35,7 +35,7 @@ classifiers = [
 ]
 dependencies = [
     "aiohttp>=3.7.4",
-    "ipywidgets==7.7.1",
+    "ipywidgets==7.8.3",
     "bottleneck>=1.3.7",
     "cachey>=0.2.1",
     "dask>=2022.12.0",
@@ -44,7 +44,7 @@ dependencies = [
     "xarray>=v2022.12.0",
     "zarr>=2.14.2",
 ]
-version = "0.4.17"
+version = "0.4.18"
 
 [project.optional-dependencies]
 docs = [
@@ -108,7 +108,7 @@ build_cmd = "build:prod"
 github_url = "https://github.com/msoechting/lexcube/"
 
 [tool.tbump.version]
-current = "0.4.17"
+current = "0.4.18"
 
 # Example of a semver regexp.
 # Make sure this matches current_version before
