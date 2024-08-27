@@ -52,7 +52,7 @@ def start_tile_server_in_widget_mode(widget: widgets.DOMWidget, data_source: Uni
     else:
         dims = ["Z", "Y", "X"]
         variable_name = "default_var"
-        indices = { "z": range(data_source.shape[0]), "y": range(data_source.shape[1]), "x": range(data_source.shape[2]) }
+        indices = { "z": list(range(data_source.shape[0])), "y": list(range(data_source.shape[1])), "x": list(range(data_source.shape[2])) }
 
     data_source_name = f"{type(data_source)}"
 

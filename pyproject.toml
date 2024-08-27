@@ -44,7 +44,7 @@ dependencies = [
     "xarray>=v2022.12.0",
     "zarr>=2.14.2",
 ]
-version = "0.4.18"
+version = "0.4.19"
 
 [project.optional-dependencies]
 docs = [
@@ -108,7 +108,7 @@ build_cmd = "build:prod"
 github_url = "https://github.com/msoechting/lexcube/"
 
 [tool.tbump.version]
-current = "0.4.18"
+current = "0.4.19"
 
 # Example of a semver regexp.
 # Make sure this matches current_version before

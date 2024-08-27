@@ -22,4 +22,4 @@ Information about the frontend package of the widgets.
 """
 
 module_name = "lexcube"
-module_version = "^0.4.18"
+module_version = "^0.4.19"
