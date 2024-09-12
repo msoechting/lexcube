@@ -103,7 +103,7 @@ There are also specific example notebooks for the following use cases:
 ```python
 import xarray as xr
 import lexcube 
-ds = xr.open_dataset("http://data.rsc4earth.de/EarthSystemDataCube/v3.0.2/esdc-8d-0.25deg-256x128x128-3.0.2.zarr/", chunks={}, engine="zarr")
+ds = xr.open_dataset("https://data.rsc4earth.de/download/EarthSystemDataCube/v3.0.2/esdc-8d-0.25deg-256x128x128-3.0.2.zarr/", chunks={}, engine="zarr")
 da = ds["air_temperature_2m"][256:512,256:512,256:512]
 w = lexcube.Cube3DWidget(da, cmap="thermal_r", vmin=-20, vmax=30)
 w
