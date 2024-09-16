@@ -59,8 +59,23 @@
     <div class="toolbar-ui">
         <div class="toolbar-ui-button fullscreen-button" title="Enter/exit fullscreen" style="background-image: url('fullscreen.svg')"></div>
         <div class="toolbar-ui-button data-select-button" title="Options" onclick="let c = this.parentNode.parentNode.getElementsByClassName('options-ui')[0]; c.style.display = c.style.display == 'none' ? 'block' : 'none';" style="background-image: url('data-management.svg')"></div>
-        <div class="toolbar-ui-button animate-start-button" title="Start Animation" style="background-image: url('play.svg')"></div>
-        <div class="toolbar-ui-button animate-stop-button" title="Stop Animation" style="background-image: url('pause.svg');display:none;"></div>
+        <div class="animation-dropdown">
+            <div class="toolbar-ui-button animate-start-button" title="Start Animation" style="background-image: url('play.svg')"></div>
+            <div class="toolbar-ui-button animate-stop-button" title="Stop Animation" style="background-image: url('pause.svg');display:none;"></div>
+
+            <div class="animation-dropdown-content">
+                <div class="ui-normal noselect animation-settings-ui">
+                    <h3>Animation Settings</h3>
+                    <div>Increment per Step:</div>
+                    <div class="slider animation-increment-slider"></div>
+                    <div>Visible Window:</div>
+                    <div class="slider animation-window-slider"></div>
+                    <div>Animation Speed:</div>
+                    <div class="slider animation-speed-slider"></div>
+                    <div>Total Time: <span class="animation-total-duration" style="font-weight: bold;">10.5</span> s</div>
+                </div>
+            </div>
+        </div>
         <div class="toolbar-ui-button download-image-button" title="Download Image" style="background-image: url('download.svg'); display: none;"></div>
         <div class="toolbar-ui-button download-template-button" title="Download Print Template" style="background-image: url('download-print-template.svg');"></div>
         <div class="toolbar-ui-button gps-button" title="Show Current Location on Cube" style="background-image: url('location.svg');"></div>

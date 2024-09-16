@@ -61,6 +61,18 @@ function capitalizeString(s: string) {
     return s[0].toUpperCase() + s.slice(1);
 }
 
+function roundToSparsity(value: number, sparsity: number) {
+    return Math.round(value / sparsity) * sparsity;
+}
+
+function roundUpToSparsity(value: number, sparsity: number) {
+    return Math.ceil(value / sparsity) * sparsity;
+}
+
+function roundDownToSparsity(value: number, sparsity: number) {
+    return Math.floor(value / sparsity) * sparsity;
+}
+
 const TILE_SIZE = 256;
 const MAX_ZOOM_FACTOR = 6.0;
 const TILE_FORMAT_MAGIC_BYTES = "lexc";
@@ -78,6 +90,6 @@ const DEFAULT_WIDGET_HEIGHT = 768;
 const API_VERSION = 5;
 const TILE_VERSION = 2;
 
-const PACKAGE_VERSION = "0.4.19";
+const PACKAGE_VERSION = "0.4.20";
 
-export { DeviceOrientation, PACKAGE_VERSION, positiveModulo, range, getIndexDimensionOfFace, getAddressedFacesOfDimension, getFacesOfIndexDimension, capitalizeString, DEFAULT_WIDGET_WIDTH, DEFAULT_WIDGET_HEIGHT, DEFAULT_COLORMAP, ANOMALY_PARAMETER_ID_SUFFIX, TILE_FORMAT_MAGIC_BYTES, TILE_VERSION, TILE_SIZE, MAX_ZOOM_FACTOR, NAN_TILE_MAGIC_NUMBER, LOSSLESS_TILE_MAGIC_NUMBER, NAN_REPLACEMENT_VALUE, COLORMAP_STEPS, NOT_LOADED_REPLACEMENT_VALUE, API_VERSION, Dimension, CubeFace }
+export { DeviceOrientation, PACKAGE_VERSION, roundDownToSparsity, roundUpToSparsity, roundToSparsity, positiveModulo, range, getIndexDimensionOfFace, getAddressedFacesOfDimension, getFacesOfIndexDimension, capitalizeString, DEFAULT_WIDGET_WIDTH, DEFAULT_WIDGET_HEIGHT, DEFAULT_COLORMAP, ANOMALY_PARAMETER_ID_SUFFIX, TILE_FORMAT_MAGIC_BYTES, TILE_VERSION, TILE_SIZE, MAX_ZOOM_FACTOR, NAN_TILE_MAGIC_NUMBER, LOSSLESS_TILE_MAGIC_NUMBER, NAN_REPLACEMENT_VALUE, COLORMAP_STEPS, NOT_LOADED_REPLACEMENT_VALUE, API_VERSION, Dimension, CubeFace }

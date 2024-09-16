@@ -19,7 +19,7 @@
 import { Euler, Event, Intersection, IUniform, Object3D, Vector2, Vector3 } from 'three'
 import { clamp } from 'three/src/math/MathUtils';
 import noUiSlider, { API, PartialFormatter } from 'nouislider';
-import { CubeFace, Dimension, MAX_ZOOM_FACTOR, positiveModulo, range, TILE_SIZE, API_VERSION, capitalizeString, ANOMALY_PARAMETER_ID_SUFFIX, DEFAULT_COLORMAP } from './constants';
+import { CubeFace, Dimension, MAX_ZOOM_FACTOR, positiveModulo, range, TILE_SIZE, API_VERSION, capitalizeString, ANOMALY_PARAMETER_ID_SUFFIX, DEFAULT_COLORMAP, roundDownToSparsity, roundUpToSparsity, roundToSparsity } from './constants';
 import { CubeClientContext } from './client';
 import { Tile } from './tiledata';
 import { OrbitControls } from './OrbitControls';
@@ -32,6 +32,146 @@ import parameterAttributionMetadata from '../content/parameterMetadataAttributio
 import parameterCustomColormapsMetadata from '../content/parameterCustomColormaps.json'
 import defaultColormaps from '../content/default-colormaps.json'
 
+
+class AnimationParameters {
+    private dimensionLength: number;
+    private parameterRange: ParameterRange;
+    private cubeDimension: CubeDimension;
+
+    // 3 parameters that can be changed in the UI
+    private visibleWindow: number;
+    private incrementPerStep: number;
+    private fps: number;
+
+    // 2 parameters that result from the UI-set parameters
+    private totalSteps!: number;
+    private totalDurationSeconds!: number;
+
+    private currentStep: number = 0;
+
+    private sparsity: number;
+
+    constructor(dimension: Dimension, cubeDimensions: CubeDimensions, sparsity: number) {
+        this.parameterRange = cubeDimensions.getParameterRangeByDimension(dimension);
+        this.dimensionLength = cubeDimensions.getParameterRangeByDimension(dimension).length();
+        this.cubeDimension = cubeDimensions.getCubeDimensionByDimension(dimension);
+        this.sparsity = sparsity;
+
+        const targetSteps = this.dimensionLength / sparsity;
+        this.visibleWindow = roundToSparsity(this.dimensionLength / 5.0, sparsity);
+        this.incrementPerStep = Math.max(roundToSparsity((this.dimensionLength - this.visibleWindow) / targetSteps, sparsity), sparsity);
+        this.fps = 10;
+        this.updateStepsAndDuration();
+    }
+
+    private updateStepsAndDuration() {
+        this.totalSteps = Math.ceil((this.dimensionLength - this.visibleWindow) / this.incrementPerStep);
+        this.totalDurationSeconds = this.totalSteps / this.fps;
+    }
+
+    indexDifferenceToString(indexDifference: number) {
+        indexDifference = Math.round(Math.abs(indexDifference));
+        const s = this.cubeDimension.getApproximateDifferenceString(indexDifference);
+        if (!s) {
+            const d = indexDifference.toFixed(0);
+            return `${d} unit${d == "1" ? "" : "s"}`;
+        }
+        return `ca. ${s} (${Math.round(indexDifference).toFixed(0)} step${indexDifference > 1 ? "s" : ""})`;
+    }
+
+    getRangeForVisibleWindow() {
+        return [this.sparsity, roundToSparsity(this.dimensionLength / 2.0, this.sparsity)];
+    }
+
+    getRangeForIncrementPerStep() { // has to be multiple of sparsity
+        return [this.sparsity, roundToSparsity(this.dimensionLength / 10.0, this.sparsity)];
+    }
+
+    getExponentialRangeFromLinearRange(range: number[]) {
+        const d = range[1] - range[0];
+        return [
+            range[0], 
+            roundToSparsity(0.07*d + range[0], this.sparsity), 
+            roundToSparsity(0.21*d + range[0], this.sparsity), 
+            roundToSparsity(0.48*d + range[0], this.sparsity), 
+            range[1]
+        ];
+    }
+
+    getRangeForFps() {
+        return [2, 30];
+    }
+
+    getTotalSteps() {
+        return this.totalSteps;
+    }
+
+    getFps() {
+        return this.fps;
+    }
+
+    getVisibleWindow() {
+        return this.visibleWindow;
+    }
+
+    getDimension(): Dimension {
+        return this.cubeDimension.dimension;
+    }
+
+    getIncrementPerStep() {
+        return this.incrementPerStep;
+    }
+
+    setVisibleWindow(visibleWindow: number) {
+        if (isNaN(visibleWindow)) {
+            return;
+        }
+        this.visibleWindow = roundToSparsity(visibleWindow, this.sparsity);
+        this.updateStepsAndDuration();
+    }
+
+    setIncrementPerStep(incrementPerStep: number) {
+        if (isNaN(incrementPerStep)) {
+            return;
+        }
+        const newIncrementPerStep = roundToSparsity(incrementPerStep, this.sparsity);
+        const r = this.incrementPerStep / newIncrementPerStep;
+        this.currentStep = Math.round(this.currentStep * r);
+        this.incrementPerStep = newIncrementPerStep;
+        this.updateStepsAndDuration();
+    }
+
+    setFps(fps: number) {
+        if (isNaN(fps)) {
+            return;
+        }
+        this.fps = fps;
+        this.updateStepsAndDuration();
+    }
+
+    getFormattedDurationInSeconds() {
+        return this.totalDurationSeconds.toFixed(1);
+    }
+
+    getAnimationRangeFromStep() {
+        const a = this.incrementPerStep * this.currentStep;
+        const min = roundUpToSparsity(Math.min(this.parameterRange.min + a, this.parameterRange.max - this.visibleWindow), this.sparsity);
+        const max = roundDownToSparsity(min + this.visibleWindow, this.sparsity);
+        return { min, max };
+    }
+    
+    increaseStep() {
+        if (this.currentStep >= this.totalSteps) {
+            return false;
+        }
+        this.currentStep += 1;
+        return true;
+    }
+
+    resetStep() {
+        this.currentStep = -1;
+    }
+}
 
 class GeospatialContext {
     isValid() {
@@ -126,9 +266,11 @@ class CubeDimension {
     cubeDimensions: CubeDimensions;
     flipped: boolean = false;
     units: string = "";
+    dimension: Dimension;
 
-    constructor(cubeDimensions: CubeDimensions, name: string, steps: number, indices: Array<any>, type: CubeDimensionType | null) {
+    constructor(cubeDimensions: CubeDimensions, dimension: Dimension, name: string, steps: number, indices: Array<any>, type: CubeDimensionType | null) {
         this.cubeDimensions = cubeDimensions;
+        this.dimension = dimension;
         this.name = name;
         this.steps = Math.round(steps); // round for cases like 29.999999997
         this.type = type || this.guessType();
@@ -153,6 +295,36 @@ class CubeDimension {
         return CubeDimensionType.Generic;
     }
 
+    private getTimeMetaData() {
+        const totalTimeSpanDays = Math.abs(((this.indices[this.indices.length - 1] as Date).getTime() - (this.indices[0] as Date).getTime()) / (1000 * 60 * 60 * 24));
+        const millisecondsPerStep = Math.abs(((this.indices[this.indices.length - 1] as Date).getTime() - (this.indices[0] as Date).getTime()) / this.indices.length);
+        const daysPerStep = millisecondsPerStep / (60 * 60 * 24 * 1000);
+        const hoursPerStep = millisecondsPerStep / (60 * 60 * 1000);
+        const minutesPerStep = millisecondsPerStep / (60 * 1000);
+        const secondsPerStep = millisecondsPerStep / 1000;
+        return {
+            totalTimeSpanDays,
+            millisecondsPerStep,
+            secondsPerStep,
+            hoursPerStep,
+            minutesPerStep,
+            daysPerStep,
+            monthsRelevant: daysPerStep > 60,
+            weeksRelevant: daysPerStep > 14.5,
+            daysRelevant: daysPerStep > 1,
+            hoursRelevant: hoursPerStep > 1,
+            minutesRelevant: minutesPerStep > 1,
+            secondsRelevant: secondsPerStep >= 1,
+            millisecondsRelevant: secondsPerStep < 1,
+        }
+    }
+
+    private getTimeIndexString(numericIndex: number): string {
+        const indexLabel = this.indices[numericIndex];
+        const timeData = this.getTimeMetaData();
+        return `${timeData.totalTimeSpanDays > 1 ? getDayString(indexLabel as Date) : ""} ${timeData.daysPerStep < 1 ? getTimeString(indexLabel as Date, timeData.millisecondsRelevant) : ""}`.trim();
+    }
+
     getIndexString(numericIndex: number): string {
         const roundedIndex = clamp(Math.floor(numericIndex), 0, this.steps - 1);
         // if (roundedIndex != numericIndex) {
@@ -160,30 +332,96 @@ class CubeDimension {
         // }
         const indexLabel = this.indices[roundedIndex];
         if (this.type == CubeDimensionType.Time) {
-            const totalTimeSpanDays = Math.abs(((this.indices[this.indices.length - 1] as Date).getTime() - (this.indices[0] as Date).getTime()) / (1000 * 60 * 60 * 24));
-            const secondsPerStep = Math.abs(((this.indices[1] as Date).getTime() - (this.indices[0] as Date).getTime()) / 1000);
-            const daysPerStep = secondsPerStep / (60 * 60 * 24);
-            const millisecondsRelevant = secondsPerStep < 1;
-            return `${totalTimeSpanDays > 1 ? getDayString(indexLabel as Date) : ""} ${daysPerStep < 1 ? getTimeString(indexLabel as Date, millisecondsRelevant) : ""}`.trim();
+            return this.getTimeIndexString(roundedIndex);
         } else if (this.type == CubeDimensionType.Latitude) {
-            if (typeof(indexLabel) == "number") {            
+            if (typeof (indexLabel) == "number") {
                 return this.cubeDimensions.getLatitudeStringFromIndexValue(indexLabel);
             } else if (this.cubeDimensions.geospatialContextProvided) {
-                return this.cubeDimensions.getLatitudeStringFromStepAndGeospatialContext(roundedIndex, this.steps); 
+                return this.cubeDimensions.getLatitudeStringFromStepAndGeospatialContext(roundedIndex, this.steps);
             }
         } else if (this.type == CubeDimensionType.Longitude) {
-            if (typeof(indexLabel) == "number") {
+            if (typeof (indexLabel) == "number") {
                 return this.cubeDimensions.getLongitudeStringFromIndexValue(indexLabel);
             } else if (this.cubeDimensions.geospatialContextProvided) {
                 return this.cubeDimensions.getLongitudeStringFromStepAndGeospatialContext(roundedIndex, this.steps);
             }
-        } else if (typeof(indexLabel) == "number") {
+        } else if (typeof (indexLabel) == "number") {
             if (this.units) {
                 return `${indexLabel} ${this.units}`;
             }
             return indexLabel.toLocaleString();
         }
-        return `${indexLabel}`; 
+        return `${indexLabel}`;
+    }
+
+    hasNumericIndices() {
+        const first = this.indices[0];
+        return typeof (first) === "number";
+    }
+
+    hasTrivialNumericIndices() {
+        const first = this.indices[0];
+        const last = this.indices[this.indices.length - 1];
+        return typeof (first) === "number" && typeof (last) === "number" && first == 0 && last == this.indices.length - 1;
+    }
+
+    getApproximateDifferenceString(indexDifference: number): string {
+        if (this.type == CubeDimensionType.Time) {
+            return this.getApproximateTimeDifferenceString(indexDifference);
+        }
+        if (this.hasTrivialNumericIndices()) {
+            return "";
+        }
+        const first = this.indices[0];
+        const last = this.indices[this.indices.length - 1];
+        if (typeof (first) !== "number" || typeof (last) !== "number") {
+            return "";
+        }
+        const differencePerStep = Math.abs(last - first) / Math.max(1, this.steps - 1);
+        const difference = Math.abs(indexDifference) * differencePerStep;
+        const precision = Math.max(0, Math.min(2, -Math.floor(Math.log10(difference))));
+        const d = difference.toFixed(precision);
+        if (this.units) {
+            return `${d} ${this.units}`;
+        }
+        return `${d} unit${d == "1" ? "" : "s"}`;
+    }
+
+    private getApproximateTimeDifferenceString(indexDifference: number): string {
+        if (this.type != CubeDimensionType.Time) {
+            return `${Math.round(indexDifference).toFixed(0)}`;
+        }
+        const absoluteSteps = Math.abs(indexDifference);
+        const timeData = this.getTimeMetaData();
+        const totalDaysDifference = absoluteSteps * timeData.daysPerStep;
+        const totalHoursDifference = absoluteSteps * timeData.hoursPerStep;
+        const totalMinutesDifference = absoluteSteps * timeData.minutesPerStep;
+        const totalSecondsDifference = absoluteSteps * timeData.secondsPerStep;
+        if (totalDaysDifference > 340) { // from 11.5 months up, show years
+            const y = totalDaysDifference / 365;
+            return `${y.toFixed(1)} year${y.toFixed(1) == "1.0" ? "" : "s"}`;
+        } else if (totalDaysDifference > 60) { // from 8.5 weeks up, show months
+            const m = Math.round(totalDaysDifference / 30);
+            return `${m.toFixed(0)} month${m > 1 ? "s" : ""}`;
+        } else if (totalDaysDifference > 14.5) { // from 14.5 days up, show weeks
+            const w = Math.round(totalDaysDifference / 7);
+            return `${w.toFixed(0)} week${w > 1 ? "s" : ""}`;
+        } else if (totalDaysDifference > 1) { // from 1 day up, show days
+            const d = Math.round(totalDaysDifference);
+            return `${d.toFixed(0)} day${d > 1 ? "s" : ""}`;
+        } else if (totalHoursDifference > 1) { // from 1 hour up, show hours
+            const h = Math.round(totalHoursDifference);
+            return `${h.toFixed(0)} hour${h > 1 ? "s" : ""}`;
+        } else if (totalMinutesDifference > 1) { // from 1 minute up, show minutes
+            const m = Math.round(totalMinutesDifference);
+            return `${m.toFixed(0)} minute${m > 1 ? "s" : ""}`;
+        } else if (totalSecondsDifference > 1) { // from 1 second up, show seconds
+            const s = Math.round(totalSecondsDifference);
+            return `${s.toFixed(0)} second${s > 1 ? "s" : ""}`;
+        } else { // otherwise show milliseconds
+            const ms = Math.round(absoluteSteps * timeData.millisecondsPerStep);
+            return `${ms.toFixed(0)} millisecond${ms > 1 ? "s" : ""}`;
+        }
     }
 
     getName() {
@@ -198,14 +436,14 @@ class CubeDimension {
     }
 
     getValueRange() {
-        if (typeof(this.indices[0]) === "number") {
+        if (typeof (this.indices[0]) === "number") {
             return Math.abs((this.indices[0]) - (this.indices[this.indices.length - 1] as number));
         }
         return -1;
     }
 
     getMaxValue() {
-        if (typeof(this.indices[0]) === "number") {
+        if (typeof (this.indices[0]) === "number") {
             return Math.max(...this.indices as Array<number>);
         }
         return -1;
@@ -222,7 +460,7 @@ class CubeDimensions {
     zParameterRange: ParameterRange = new ParameterRange();
     yParameterRange: ParameterRange = new ParameterRange();
     xParameterRange: ParameterRange = new ParameterRange();
-    
+
     geospatialContextProvided: boolean = false;
     // in degrees
     geospatialLatitudeMax: number = -1;
@@ -234,9 +472,10 @@ class CubeDimensions {
 
     constructor(context: CubeClientContext, dimensionNames: string[], dimensionSizes: any, indices: { "x": Array<any>, "y": Array<any>, "z": Array<any> }) {
         this.context = context;
-        this.x = new CubeDimension(this, dimensionNames[2], dimensionSizes[dimensionNames[2]], indices["x"], null);
-        this.y = new CubeDimension(this, dimensionNames[1], dimensionSizes[dimensionNames[1]], indices["y"], null);
-        this.z = new CubeDimension(this, dimensionNames[0], dimensionSizes[dimensionNames[0]], indices["z"], null);
+        this.x = new CubeDimension(this, Dimension.X, dimensionNames[2], dimensionSizes[dimensionNames[2]], indices["x"], null);
+        this.y = new CubeDimension(this, Dimension.Y, dimensionNames[1], dimensionSizes[dimensionNames[1]], indices["y"], null);
+        this.z = new CubeDimension(this, Dimension.Z, dimensionNames[0], dimensionSizes[dimensionNames[0]], indices["z"], null);
+        console.log("CubeDimensions", this);
     }
 
     setGeospatialContext(geospatialLatitudeMin: number, geospatialLatitudeMax: number, geospatialLongitudeMin: number, geospatialLongitudeMax: number) {
@@ -290,7 +529,7 @@ class CubeDimensions {
     xTilesForFace(face: CubeFace, lod: number) {
         return Math.ceil((this.totalWidthForFace(face) * Math.pow(0.5, lod)) / TILE_SIZE)
     }
-    
+
     yTilesForFace(face: CubeFace, lod: number) {
         return Math.ceil((this.totalHeightForFace(face) * Math.pow(0.5, lod)) / TILE_SIZE)
     }
@@ -363,6 +602,16 @@ class CubeDimensions {
             return this.zParameterRange;
         }
     }
+
+    getCubeDimensionByDimension(dimension: Dimension) {
+        if (dimension == Dimension.X) {
+            return this.x;
+        } else if (dimension == Dimension.Y) {
+            return this.y;
+        } else {
+            return this.z;
+        }
+    }
 }
 
 class ParameterColormapMetadata {
@@ -384,7 +633,7 @@ class ParameterAttributionMetadata {
     long_name_pdf?: string;
     coverage?: string;
     references?: string;
-    reference_link?: string;    
+    reference_link?: string;
     reference_link2?: string;
 }
 
@@ -438,8 +687,8 @@ class Parameter {
         } else if (this.units == "kg m**-2") {
             const target = -Math.round(Math.log10(this.globalMaximumValue) / 3);
             if (target >= 0) {
-                this.units = `${["kg","g", "mg", "μg", "ng"][target]} m**-2`;
-                this.unitConversion = (a: number) => a * Math.pow(10, 3*target);
+                this.units = `${["kg", "g", "mg", "μg", "ng"][target]} m**-2`;
+                this.unitConversion = (a: number) => a * Math.pow(10, 3 * target);
             }
         }
     }
@@ -455,7 +704,7 @@ class Parameter {
     getUnitHTML() {
         return this.getUnit().replace(/(\w)(-?\d)/g, "$1<sup>$2</sup>").replace(/(\w)\^(-?\d)/g, "$1<sup>$2</sup>").replace(/(\w)\*\*(-?\d)/g, "$1<sup>$2</sup>")
     }
-    
+
     isAnomalyParameter() {
         return this.name.endsWith(ANOMALY_PARAMETER_ID_SUFFIX);
     }
@@ -572,7 +821,7 @@ class CubeSelection {
         for (let face = 0; face < 3; face++) {
             this.displaySizes.push(new Vector2());
             this.displayOffsets.push(new Vector2());
-            this.updateVectors(face*2);
+            this.updateVectors(face * 2);
         }
     }
 
@@ -601,7 +850,7 @@ class CubeSelection {
     }
 
     parseSelectionBoundary(parsedLowerBoundary: number | undefined, parsedUpperBoundary: number | undefined, dimension: Dimension) {
-        if (typeof(parsedLowerBoundary) != "number" || isNaN(parsedLowerBoundary) || parsedLowerBoundary < 0 || typeof(parsedUpperBoundary) != "number" || isNaN(parsedUpperBoundary) || parsedUpperBoundary < 0) {
+        if (typeof (parsedLowerBoundary) != "number" || isNaN(parsedLowerBoundary) || parsedLowerBoundary < 0 || typeof (parsedUpperBoundary) != "number" || isNaN(parsedUpperBoundary) || parsedUpperBoundary < 0) {
             return false;
         }
         const selectionRange = this.getSelectionRangeByDimension(dimension);
@@ -691,7 +940,7 @@ class CubeSelection {
         this.displayOffsets[Math.floor(face / 2)].copy(this.roundOffsetToSparsity(newOffset, face));
         this.updateAfterVectorChange(face, true);
     }
-    
+
     private updateAfterVectorChange(face: CubeFace, finalChange: boolean) {
         this.updateRanges(face)
         this.updateOtherVectors(face);
@@ -756,7 +1005,7 @@ class CubeSelection {
         for (let i = 0; i < 6; i++) {
             if (i != face) {
                 this.updateVectors(i)
-            }            
+            }
         }
     }
 
@@ -801,7 +1050,7 @@ class CubeSelection {
             return positiveModulo(this.xSelectionRange.max, this.context.interaction.cubeDimensions.x.steps);
         }
     }
-    
+
     getSelectionRangeByDimension(dimension: Dimension): ParameterRange {
         if (dimension == Dimension.Z) {
             return this.zSelectionRange;
@@ -839,15 +1088,15 @@ class CubeInteraction {
     updateUiDuringInteractions = {
         sliders: false,
         orbitControls: false,
-    }; 
+    };
 
     private cameraPresets = [
-        { name: "Diagonal Close-up South America", position: new Vector3(0.7334182744080036, -0.1937720441909164, 0.23593831568307924), rotation: new Euler(0.6875841168575725, 1.17633108419973, -0.6487348071441518, 'XYZ')},
+        { name: "Diagonal Close-up South America", position: new Vector3(0.7334182744080036, -0.1937720441909164, 0.23593831568307924), rotation: new Euler(0.6875841168575725, 1.17633108419973, -0.6487348071441518, 'XYZ') },
         { name: "Full Earth - Front", position: new Vector3(2.080720175325273, 6.61750251743031e-17, 6.61750251743031e-17), rotation: new Euler(-6.162975822039155e-33, 1.5707963267948966, 0) },
         { name: "Look at right side", position: new Vector3(0.005694911428844007, 0.030379652376199662, -1.1831101491937133), rotation: new Euler(-3.115920506235054, 0.004811885820327965, 3.1414690954800735) },
         { name: "Tilted, front/left/top", position: new Vector3(1.799136954722411, 0.9117069475188829, 1.0651359111004994), rotation: new Euler(-0.7061832876241241, 0.9071865194182971, 0.5916191744172524) },
         { name: "Very far away", position: new Vector3(13.336517975968864, 2.399780986066818, 3.0129436502811733), rotation: new Euler(-0.6725973350194719, 1.2896276568959506, 0.653167025497404) },
-        { name: "Multi-cube", position: new Vector3(5.72725123221618, 0, 0), rotation: new Euler(0.9273842476318528, 0.5*Math.PI, -0.9269676945976868) },
+        { name: "Multi-cube", position: new Vector3(5.72725123221618, 0, 0), rotation: new Euler(0.9273842476318528, 0.5 * Math.PI, -0.9269676945976868) },
         { name: "Single Face (Front)", position: new Vector3(4.25, 0, 0), rotation: new Euler(0, Math.PI / 2, 0), zoom: 3.5 },
         { name: "Single Face (Back)", position: new Vector3(-4.25, 0, 0), rotation: new Euler(Math.PI, -Math.PI / 2, Math.PI), zoom: 3.5 },
         { name: "Single Face (Top)", position: new Vector3(1e-5, 4.25, 0), rotation: new Euler(-Math.PI / 2, 1e-8, Math.PI / 2), zoom: 3.5 },
@@ -882,15 +1131,21 @@ class CubeInteraction {
     private ySliderLabelDiv!: HTMLElement;
     private xSliderLabelDiv!: HTMLElement;
 
+    private htmlAnimationIncrementSliderDiv!: HTMLElement;
+    private htmlAnimationWindowSliderDiv!: HTMLElement;
+    private htmlAnimationSpeedSliderDiv!: HTMLElement;
+
+    private htmlAnimationTotalDurationDiv!: HTMLElement;
+
     private htmlColormapScaleGradient!: HTMLElement;
     private htmlColormapScaleTexts!: HTMLCollectionOf<Element>;
     private htmlColormapScaleUnitText!: HTMLElement;
-    
+
     private htmlFullscreenButton!: HTMLElement;
     private htmlDataSelectButton!: HTMLElement;
     private htmlDownloadImageButton!: HTMLElement;
     private htmlDownloadPrintTemplateButton!: HTMLElement;
-    
+
     private htmlPrintTemplateResultWrapper!: HTMLElement;
     private htmlPrintTemplateResult!: HTMLElement;
     private htmlPrintTemplateDownloadButtonPng!: HTMLAreaElement;
@@ -901,7 +1156,7 @@ class CubeInteraction {
     private htmlPrintTemplateLoaderVideo!: HTMLVideoElement;
     private htmlPrintTemplateResultSection!: HTMLElement;
 
-    private htmlGpsButton!: HTMLElement 
+    private htmlGpsButton!: HTMLElement
 
     private htmlAnimateStartButton!: HTMLElement;
     private htmlAnimateStopButton!: HTMLElement;
@@ -929,7 +1184,7 @@ class CubeInteraction {
 
     private htmlParent: HTMLElement;
 
-    updateWidgetRanges: () => void = () => {};
+    updateWidgetRanges: () => void = () => { };
 
 
     private getHtmlElementByClassName(className: string): HTMLElement {
@@ -937,6 +1192,7 @@ class CubeInteraction {
         if (elements.length != 1) {
             console.warn("Tried to access HTML element of class name", className, "but got", elements.length, "results.")
         }
+        console.log("Found element with class name", className, ":", elements[0]);
         return elements[0] as HTMLElement;
     }
 
@@ -947,18 +1203,24 @@ class CubeInteraction {
         this.htmlColormapFlippedCheckbox = this.getHtmlElementByClassName("colormap-flipped-checkbox")! as HTMLInputElement;
         this.htmlColormapPercentileCheckbox = this.getHtmlElementByClassName("colormap-percentile-checkbox")! as HTMLInputElement;
         this.htmlColormapButtonList = this.getHtmlElementByClassName("colormap-list")! as HTMLDivElement;
-    
+
         this.zSliderDiv = this.getHtmlElementByClassName('z-selection-slider')!;
         this.ySliderDiv = this.getHtmlElementByClassName('y-selection-slider')!;
         this.xSliderDiv = this.getHtmlElementByClassName('x-selection-slider')!;
-        
+
         this.zSliderLabelDiv = this.getHtmlElementByClassName('z-selection-slider-label')!;
         this.ySliderLabelDiv = this.getHtmlElementByClassName('y-selection-slider-label')!;
         this.xSliderLabelDiv = this.getHtmlElementByClassName('x-selection-slider-label')!;
-    
+
+        this.htmlAnimationIncrementSliderDiv = this.getHtmlElementByClassName('animation-increment-slider')!;
+        this.htmlAnimationWindowSliderDiv = this.getHtmlElementByClassName('animation-window-slider')!;
+        this.htmlAnimationSpeedSliderDiv = this.getHtmlElementByClassName('animation-speed-slider')!;
+
+        this.htmlAnimationTotalDurationDiv = this.getHtmlElementByClassName('animation-total-duration')!;
+
         this.htmlColormapMinInputDiv = this.getHtmlElementByClassName("colormap-min-input") as HTMLInputElement;
         this.htmlColormapMaxInputDiv = this.getHtmlElementByClassName("colormap-max-input") as HTMLInputElement;
-    
+
         this.htmlColormapRangeApplyButton = this.getHtmlElementByClassName("colormap-range-apply-button") as HTMLButtonElement;
         this.htmlColormapScaleGradient = this.getHtmlElementByClassName("color-scale-gradient")!;
         this.htmlColormapScaleTexts = this.htmlParent.getElementsByClassName("color-scale-label")!;
@@ -968,35 +1230,35 @@ class CubeInteraction {
         this.htmlDownloadImageButton = this.getHtmlElementByClassName('download-image-button')!;
         this.htmlDownloadPrintTemplateButton = this.getHtmlElementByClassName('download-template-button')!;
         this.htmlPrintTemplateResultWrapper = this.getHtmlElementByClassName("print-template-result-wrapper")!;
-        
+
         this.htmlPrintTemplateResult = this.getHtmlElementByClassName("print-template-result")!;
         this.htmlPrintTemplateDownloadButtonPng = this.getHtmlElementByClassName("download-print-template-result-png")! as HTMLAreaElement;
         this.htmlPrintTemplateDownloadButtonSvg = this.getHtmlElementByClassName("download-print-template-result-svg")! as HTMLAreaElement;
         this.htmlPrintTemplateDownloadEditNoteButton = this.getHtmlElementByClassName("download-print-template-result-edit-note")! as HTMLAreaElement;
-        
+
         this.htmlPrintTemplateLoadingSection = this.getHtmlElementByClassName("print-template-loading-section")!;
         this.htmlPrintTemplateLoaderVideo = this.getHtmlElementByClassName("print-template-loader-video")! as HTMLVideoElement;
         this.htmlPrintTemplateResultSection = this.getHtmlElementByClassName("print-template-result-section")!;
 
-        this.htmlGpsButton = this.getHtmlElementByClassName('gps-button')!;    
-        
+        this.htmlGpsButton = this.getHtmlElementByClassName('gps-button')!;
+
         this.htmlAnimateStartButton = this.getHtmlElementByClassName('animate-start-button')!;
         this.htmlAnimateStopButton = this.getHtmlElementByClassName('animate-stop-button')!;
-            
+
         this.htmlAxisLabelXMin = this.getHtmlElementByClassName('axis-label-x-min')!;
         this.htmlAxisLabelXMinParent = this.getHtmlElementByClassName('axis-label-parent-x-min')!;
         this.htmlAxisLabelXMax = this.getHtmlElementByClassName('axis-label-x-max')!;
         this.htmlAxisLabelXMaxParent = this.getHtmlElementByClassName('axis-label-parent-x-max')!;
         this.htmlAxisLabelXDimensionName = this.getHtmlElementByClassName('axis-label-x-dimension-name')!;
         this.htmlAxisLabelXDimensionNameParent = this.getHtmlElementByClassName('axis-label-parent-x-dimension-name')!;
-    
+
         this.htmlAxisLabelYMin = this.getHtmlElementByClassName('axis-label-y-min')!;
         this.htmlAxisLabelYMinParent = this.getHtmlElementByClassName('axis-label-parent-y-min')!;
         this.htmlAxisLabelYMax = this.getHtmlElementByClassName('axis-label-y-max')!;
         this.htmlAxisLabelYMaxParent = this.getHtmlElementByClassName('axis-label-parent-y-max')!;
         this.htmlAxisLabelYDimensionName = this.getHtmlElementByClassName('axis-label-y-dimension-name')!;
         this.htmlAxisLabelYDimensionNameParent = this.getHtmlElementByClassName('axis-label-parent-y-dimension-name')!;
-    
+
         this.htmlAxisLabelZMin = this.getHtmlElementByClassName('axis-label-z-min')!;
         this.htmlAxisLabelZMinParent = this.getHtmlElementByClassName('axis-label-parent-z-min')!;
         this.htmlAxisLabelZMax = this.getHtmlElementByClassName('axis-label-z-max')!;
@@ -1017,10 +1279,14 @@ class CubeInteraction {
     private ySelectionSlider!: API;
     private xSelectionSlider!: API;
 
+    private animationIncrementSlider!: API;
+    private animationWindowSlider!: API;
+    private animationSpeedSlider!: API;
+
     private availableCubes: LogicalDataCube[] = [];
     selectedCube!: LogicalDataCube;
     selectedParameterId!: string;
-    
+
     cubeDimensions!: CubeDimensions;
     cubeSelection!: CubeSelection;
     private cubeParameters!: Map<string, Parameter>;
@@ -1038,7 +1304,7 @@ class CubeInteraction {
     private lastIndexValue: Array<number> = new Array<number>(6);
     private floatDisplaySignificance = 2;
     fullscreenActive: boolean = false;
- 
+
     private colormapScaleCanvasContext!: CanvasRenderingContext2D;
     private colormapScaleWidth: number;
     private colormapScaleHeight: number = 25;
@@ -1058,7 +1324,7 @@ class CubeInteraction {
     private interactionFinishDisplaySize: Vector2 | undefined;
     private interactionFinishDisplayOffset: Vector2 | undefined;
     private interactionFinishFace: CubeFace | undefined;
-    
+
     private deferredVisibilityAndLodUpdateMilliseconds = 150;
     private deferredVisibilityAndLodUpdateTimeoutHandler: number = 0;
     XYdataAspectRatio: number = 1; // longitude divided by latitude
@@ -1067,19 +1333,21 @@ class CubeInteraction {
     selectedColormapName!: string;
     selectedColormapCategory!: string;
 
-    private animationVisibleTimeWindow = 50; // Visible time window
-    private animationTotalSteps = 400; // Amount of animation steps, i.e. frames
-    private animationCurrentStep = -1; // Current animation step, i.e. frame
-    private animationTimeIncrementPerStep = -1; // Time increment per animation step, calculated from above values.
- 
-    private animationLastFrameTime = 0; 
+    // private animationVisibleTimeWindow = 50; // Visible time window
+    // private animationTotalSteps = 400; // Amount of animation steps, i.e. frames
+    // private animationTimeIncrementPerStep = -1; // Time increment per animation step, calculated from above values.
+    // private animationCurrentStep = -1; // Current animation step, i.e. frame
+
+    private animationParameters!: AnimationParameters;
+
+    private animationLastFrameTime = 0;
     private animationLastStepTime = 0;
-    private animationTargetFps = 10;
+    // private animationTargetFps = 10;
 
     private animationEnabled = false;
 
     private renderedAfterAllTilesDownloaded: boolean = false;
-    
+
     cubeTags: CubeTag[] = [];
 
     initialLoad = true;
@@ -1117,7 +1385,7 @@ class CubeInteraction {
         this.parseUrlFragment();
         await this.selectInitialCube();
     }
-    
+
     private async selectInitialCube() {
         if (this.initialSelectionState.cubeId) {
             if (await this.findToSelectCube(this.initialSelectionState.cubeId)) {
@@ -1129,7 +1397,7 @@ class CubeInteraction {
                 return;
             }
         }
-        await this.findToSelectCube(this.availableCubes[0].id);    
+        await this.findToSelectCube(this.availableCubes[0].id);
     }
 
     private registerEvents() {
@@ -1146,18 +1414,18 @@ class CubeInteraction {
             if (this.updateLabelPositionTimeoutId) {
                 window.clearTimeout(this.updateLabelPositionTimeoutId);
             }
-            this.updateLabelPositionTimeoutId = window.setTimeout( () => { this.updateLabelPositions(); this.updateLabelPositionTimeoutId = 0; }, 25);
+            this.updateLabelPositionTimeoutId = window.setTimeout(() => { this.updateLabelPositions(); this.updateLabelPositionTimeoutId = 0; }, 25);
         });
         this.orbitControls.addEventListener("end", this.context.rendering.updateVisibilityAndLods.bind(this.context.rendering));
         this.orbitControls.addEventListener("end", this.requestUrlFragmentUpdate.bind(this));
-        
+
         const isOverBackground = (position: Vector2) => {
             return this.context.rendering.raycastWindowPosition(position.x, position.y).length == 0;
         }
 
-        domElement.addEventListener( 'wheel', (ev: WheelEvent) => {
-            if (!this.fullyLoaded) { 
-                return; 
+        domElement.addEventListener('wheel', (ev: WheelEvent) => {
+            if (!this.fullyLoaded) {
+                return;
             }
             ev.preventDefault();
             ev.stopPropagation();
@@ -1167,16 +1435,16 @@ class CubeInteraction {
             } else {
                 this.onZoom([ev], -ev.deltaY, true);
             }
-            if (!this.currentMouseEventActive) { 
+            if (!this.currentMouseEventActive) {
                 // if panning and zooming at same time: do not refresh as selection may not be rounded to sparsity
                 this.triggerDeferredVisibilityAndLodUpdate();
-            } 
-            
+            }
+
             this.context.rendering.requestRender();
         }, false);
-        domElement.addEventListener( 'mousedown', (ev: any) => { 
-            if (!this.fullyLoaded) { 
-                return; 
+        domElement.addEventListener('mousedown', (ev: any) => {
+            if (!this.fullyLoaded) {
+                return;
             }
             this.currentMouseEventActive = true;
             const localEventPosition = this.getLocalEventPosition(ev);
@@ -1190,10 +1458,10 @@ class CubeInteraction {
             }
             this.context.rendering.requestRender();
         }, false);
-        domElement.addEventListener( 'mousemove', (ev: any) => {
-            if (!this.fullyLoaded) { 
-                return; 
-            }            
+        domElement.addEventListener('mousemove', (ev: any) => {
+            if (!this.fullyLoaded) {
+                return;
+            }
             const localEventPosition = this.getLocalEventPosition(ev);
             const overCube = !isOverBackground(localEventPosition);
             domElement.style.cursor = overCube ? "all-scroll" : "default";
@@ -1214,9 +1482,9 @@ class CubeInteraction {
             }
             this.context.rendering.requestRender();
         }, false);
-        domElement.addEventListener( 'mouseup', (ev: any) => { 
-            if (!this.fullyLoaded) { 
-                return; 
+        domElement.addEventListener('mouseup', (ev: any) => {
+            if (!this.fullyLoaded) {
+                return;
             }
             this.currentMouseEventActive = false;
             (ev as any).actOnWorld = !this.currentMouseEventOnCube;
@@ -1228,9 +1496,9 @@ class CubeInteraction {
             this.context.rendering.requestRender();
         }, false);
 
-        domElement.addEventListener( 'touchstart', (ev: TouchEvent) => {
-            if (!this.fullyLoaded) { 
-                return; 
+        domElement.addEventListener('touchstart', (ev: TouchEvent) => {
+            if (!this.fullyLoaded) {
+                return;
             }
             if (this.context.orchestrationMinionMode && ev.touches.length > 2) {
                 (ev as any).touches = [ev.touches[0]];
@@ -1240,9 +1508,9 @@ class CubeInteraction {
             this.orbitControls.onTouchStart(ev);
             this.context.rendering.requestRender();
         }, false);
-        domElement.addEventListener( 'touchend', (ev: TouchEvent) => {
-            if (!this.fullyLoaded) { 
-                return; 
+        domElement.addEventListener('touchend', (ev: TouchEvent) => {
+            if (!this.fullyLoaded) {
+                return;
             }
             if (this.context.orchestrationMinionMode && ev.touches.length > 2) {
                 (ev as any).touches = [ev.touches[0]];
@@ -1254,9 +1522,9 @@ class CubeInteraction {
             }
             this.context.rendering.requestRender();
         }, false);
-        domElement.addEventListener( 'touchmove', (ev: TouchEvent) => {
-            if (!this.fullyLoaded) { 
-                return; 
+        domElement.addEventListener('touchmove', (ev: TouchEvent) => {
+            if (!this.fullyLoaded) {
+                return;
             }
             if (this.context.orchestrationMinionMode && ev.touches.length > 2) {
                 (ev as any).touches = [ev.touches[0]];
@@ -1273,13 +1541,13 @@ class CubeInteraction {
         if (!this.fullyLoaded) {
             return;
         }
-        
+
         const labelPositions = this.context.rendering.getLabelPositions();
         const x = labelPositions[Dimension.X];
         const y = labelPositions[Dimension.Y];
         const z = labelPositions[Dimension.Z];
-        const angleToTranslate = (v: number) => `translate(-${clamp(200*(0.75-Math.abs(1-v)), 0, 100)}%, -${clamp(200*(0.75-Math.abs(1-((v + 1.5) % 2))), 0, 100)}%)`;
-        
+        const angleToTranslate = (v: number) => `translate(-${clamp(200 * (0.75 - Math.abs(1 - v)), 0, 100)}%, -${clamp(200 * (0.75 - Math.abs(1 - ((v + 1.5) % 2))), 0, 100)}%)`;
+
         this.htmlAxisLabelXMinParent.style.color = x.visible ? "white" : "transparent";
         this.htmlAxisLabelXMaxParent.style.color = x.visible ? "white" : "transparent";
         this.htmlAxisLabelXDimensionNameParent.style.color = x.visible ? "grey" : "transparent";
@@ -1333,7 +1601,7 @@ class CubeInteraction {
 
     private finishInteraction() {
         if (this.interactionFinishDisplayOffset && this.interactionFinishDisplaySize) {
-            this.cubeSelection.setVectors(this.interactionFinishFace!, this.interactionFinishDisplaySize, this.interactionFinishDisplayOffset);   
+            this.cubeSelection.setVectors(this.interactionFinishFace!, this.interactionFinishDisplaySize, this.interactionFinishDisplayOffset);
         } else if (this.interactionFinishDisplayOffset) {
             this.cubeSelection.setOffsetVector(this.interactionFinishFace!, this.interactionFinishDisplayOffset);
         }
@@ -1372,7 +1640,7 @@ class CubeInteraction {
     }
 
     getLocalEventPosition(event: Touch | MouseEvent) {
-        return this.context.rendering.getLocalEventPosition(event);     
+        return this.context.rendering.getLocalEventPosition(event);
     }
 
     onPanMove(currentPosition: Vector2) {
@@ -1414,8 +1682,8 @@ class CubeInteraction {
         if (!immediate && this.currentZoomFace == -1) {
             this.currentZoomFace = r[0]!.face!.materialIndex;
         }
-        if (!r[0]) { 
-            console.warn("No ray intersection during zoom event"); 
+        if (!r[0]) {
+            console.warn("No ray intersection during zoom event");
         }
         let uv = r[0].uv! || new Vector2(0.5, 0.5);
         if (eventPositions.length == 2) {
@@ -1507,13 +1775,13 @@ class CubeInteraction {
             lines.push(`Max. error introduced by compression in this tile: ${this.hoverData.maximumCompressionError}`)
             lines.push(`Face: ${CubeFace[this.hoverData.face]} (${this.hoverData.face})`)
             lines.push(`Tile x: ${this.hoverData.tileX} y: ${this.hoverData.tileY}, Pixel x: ${this.hoverData.pixelX} y: ${this.hoverData.pixelY}`)
-            lines.push(`Display Quality: ${(100*Math.pow(0.5, this.context.rendering.lods[this.hoverData.face])).toFixed(2)}% (LoD ${this.context.rendering.lods[this.hoverData.face]})`)
+            lines.push(`Display Quality: ${(100 * Math.pow(0.5, this.context.rendering.lods[this.hoverData.face])).toFixed(2)}% (LoD ${this.context.rendering.lods[this.hoverData.face]})`)
         }
 
         let html = "";
         for (const line of lines) {
             const color = line.indexOf("failed") > -1 ? "#ff4444" : "white";
-            html +=`<div style='color: ${color}'>${line}</div>`
+            html += `<div style='color: ${color}'>${line}</div>`
         }
         this.hoverInfoDiv.innerHTML = html;
     }
@@ -1590,7 +1858,7 @@ class CubeInteraction {
         if (decodeFailed > 0) {
             lines.push(this.context.expertMode ? `${tileDecodesFailed} tile decodes failed` : "Something went wrong - try refreshing?");
         }
-        
+
         if (this.additionalStatusMessage) {
             lines.push(this.additionalStatusMessage);
         }
@@ -1600,7 +1868,7 @@ class CubeInteraction {
             let html = "";
             for (const line of lines) {
                 const color = line.indexOf("version") > -1 ? "#48eeff" : ((line.indexOf("failed") > -1 || line.indexOf("went wrong") > -1) ? "#ff4444" : "white");
-                html +=`<div style='color: ${color}'>${line}</div>`
+                html += `<div style='color: ${color}'>${line}</div>`
             }
             this.statusMessageDiv.innerHTML = html;
         } else {
@@ -1619,13 +1887,13 @@ class CubeInteraction {
             });
         }
         this.setupHtmlReferences();
-        
+
         this.htmlQualitySelect.onchange = (() => {
             this.context.rendering.displayQuality = parseFloat(this.htmlQualitySelect.selectedOptions[0].value);
             this.context.rendering.updateVisibilityAndLods();
         })
 
-        this.htmlCubeSelect.onchange = () => { 
+        this.htmlCubeSelect.onchange = () => {
             this.selectCube(this.availableCubes[this.htmlCubeSelect.options.selectedIndex]);
             this.requestUrlFragmentUpdate();
         }
@@ -1673,7 +1941,7 @@ class CubeInteraction {
                 }
                 this.fullscreenActive = false;
                 this.context.rendering.onWindowResize();
-            }            
+            }
         };
         this.htmlFullscreenButton.onclick = triggerFullscreen;
 
@@ -1683,7 +1951,7 @@ class CubeInteraction {
         });
 
         window.onkeydown = ((ev: KeyboardEvent) => {
-            if (this.context.orchestrationMinionMode && ev.key == "5") { 
+            if (this.context.orchestrationMinionMode && ev.key == "5") {
                 triggerFullscreen();
             }
         })
@@ -1699,7 +1967,7 @@ class CubeInteraction {
         this.htmlAnimateStopButton.onclick = () => {
             this.stopAnimation();
         }
-        
+
         if (this.context.studioMode && !this.context.widgetMode) {
             this.htmlDownloadImageButton.onclick = () => {
                 this.context.rendering.downloadScreenshotFromUi(false);
@@ -1710,7 +1978,7 @@ class CubeInteraction {
             this.htmlDownloadPrintTemplateButton.onclick = () => {
                 this.context.rendering.startDownloadPrintTemplate();
             }
-    
+
             this.htmlGpsButton.onclick = () => {
                 if (!this.gpsTrackingEnabled) {
                     this.startGps();
@@ -1726,13 +1994,13 @@ class CubeInteraction {
 
     private startAnimation() {
         this.animationEnabled = true;
-        this.animationCurrentStep = -1;
-        this.animationTimeIncrementPerStep = -1;
+        this.animationParameters.resetStep();
+        // this.animationCurrentStep = -1;
         this.htmlAnimateStartButton.style.display = "none";
         this.htmlAnimateStopButton.style.display = "block";
         this.attemptNextAnimationStep();
     }
-    
+
     private stopAnimation() {
         this.animationEnabled = false;
         this.htmlAnimateStartButton.style.display = "block";
@@ -1823,10 +2091,10 @@ class CubeInteraction {
                         tooltips[handleNumber].style.display = 'block';
                         if (handlesInPool > 1) {
                             tooltips[handleNumber].style['right'] = isRight ? offset + '%' : 'auto';
-                            tooltips[handleNumber].style['left']  = !isRight ? (30-offset) + '%' : 'auto';
+                            tooltips[handleNumber].style['left'] = !isRight ? (30 - offset) + '%' : 'auto';
                         } else {
                             tooltips[handleNumber].style['right'] = offset + '%';
-                            tooltips[handleNumber].style['left']  = 'auto';
+                            tooltips[handleNumber].style['left'] = 'auto';
                         }
                     } else {
                         // Hide this tooltip
@@ -1837,12 +2105,12 @@ class CubeInteraction {
         });
     }
 
-    private gpsPositionReceived(position: { coords: { latitude: number, longitude: number }}) {
+    private gpsPositionReceived(position: { coords: { latitude: number, longitude: number } }) {
         const crd = position.coords;
         const relativeLatitude = (-crd.latitude - this.cubeDimensions.geospatialLatitudeMin) / (this.cubeDimensions.geospatialLatitudeMax - this.cubeDimensions.geospatialLatitudeMin);
         const relativeLongitude = (crd.longitude - this.cubeDimensions.geospatialLongitudeMin) / (this.cubeDimensions.geospatialLongitudeMax - this.cubeDimensions.geospatialLongitudeMin);
         const threshold = 0.2;
-        if (relativeLatitude < -threshold || relativeLongitude < -threshold || relativeLatitude > 1+threshold || relativeLongitude > 1+threshold) {
+        if (relativeLatitude < -threshold || relativeLongitude < -threshold || relativeLatitude > 1 + threshold || relativeLongitude > 1 + threshold) {
             window.alert("Your current location is not within the bounds of the cube. GPS will be deactivated.");
             this.stopGps();
             return;
@@ -1902,10 +2170,127 @@ class CubeInteraction {
         return slider;
     }
 
-    private prepareUiSliders() {
-        if (this.context.widgetMode) {
-            return;
+    private updateAnimationSliders() {
+        const s = this.selectedCubeMetadata.sparsity;
+
+        const windowRange = this.animationParameters.getExponentialRangeFromLinearRange(this.animationParameters.getRangeForVisibleWindow());
+        this.animationWindowSlider.updateOptions({
+            range: {
+                'min': [windowRange[0], s],
+                '25%': [windowRange[1], s],
+                '50%': [windowRange[2], s],
+                '75%': [windowRange[3], s],
+                'max': [windowRange[4], s]
+            },
+            start: [this.animationParameters.getVisibleWindow()],
+            step: s,
+            margin: s,
+        }, false);
+
+        const incrementRange = this.animationParameters.getExponentialRangeFromLinearRange(this.animationParameters.getRangeForIncrementPerStep());
+        this.animationIncrementSlider.updateOptions({
+            range: {
+                'min': [incrementRange[0], s],
+                '25%': [incrementRange[1], s],
+                '50%': [incrementRange[2], s],
+                '75%': [incrementRange[3], s],
+                'max': [incrementRange[4], s]
+            },
+            start: [this.animationParameters.getIncrementPerStep()],
+            step: s,
+            margin: s,
+        }, false);
+
+        this.animationSpeedSlider.updateOptions({
+            range: {
+                min: this.animationParameters.getRangeForFps()[0],
+                max: this.animationParameters.getRangeForFps()[1]
+            },
+            start: [this.animationParameters.getFps()],
+            step: 1,
+            margin: 1,
+        }, false);
+        
+    }
+
+    private prepareAnimationSliders() {
+        let basicSlider = (div: HTMLElement) => {
+            return noUiSlider.create(div, {
+                start: [0],
+                connect: false,
+                step: 1,
+                tooltips: true,
+                behaviour: 'drag',
+                range: {
+                    'min': 0,
+                    'max': 100
+                }
+            });
         }
+        this.animationIncrementSlider = basicSlider(this.htmlAnimationIncrementSliderDiv);
+        this.animationWindowSlider = basicSlider(this.htmlAnimationWindowSliderDiv);
+        this.animationSpeedSlider = basicSlider(this.htmlAnimationSpeedSliderDiv);
+
+        const updateDuration = () => {
+            this.htmlAnimationTotalDurationDiv.innerHTML = `${this.animationParameters.getFormattedDurationInSeconds()}`;
+        }
+
+        const updateAnimationIncrement = (newRange: string[]) => {
+            const v = parseInt(newRange[0]);
+            this.animationParameters.setIncrementPerStep(v);
+            updateDuration();
+        }
+        const windowAndIncrementFormatter = {
+            to: (value: number) => {
+                if (!this.animationParameters) {
+                    return `${value}`;
+                }
+                return this.animationParameters.indexDifferenceToString(Math.abs(Math.round(value)));
+            },
+        }
+        this.animationIncrementSlider.updateOptions({ tooltips: windowAndIncrementFormatter }, false);
+        this.animationIncrementSlider.on("slide", updateAnimationIncrement as any);
+        this.animationIncrementSlider.on("set", updateAnimationIncrement as any);
+
+        const updateAnimationWindow = (newRange: string[]) => {
+            const v = parseInt(newRange[0]);
+            this.animationParameters.setVisibleWindow(v);
+            updateDuration();
+        }
+        this.animationWindowSlider.updateOptions({ tooltips: windowAndIncrementFormatter }, false);
+        this.animationWindowSlider.on("slide", updateAnimationWindow as any);
+        this.animationWindowSlider.on("set", updateAnimationWindow as any);
+
+        const updateAnimationSpeed = (newRange: string[]) => {
+            const v = parseFloat(newRange[0]);
+            this.animationParameters.setFps(v);
+            updateDuration();
+        }
+        const speedFormatter = {
+            to: (value: number) => {
+                return `${Math.round(value).toFixed(0)} FPS`;
+            },
+        }
+        this.animationSpeedSlider.updateOptions({ tooltips: speedFormatter }, false);
+        this.animationSpeedSlider.on("slide", updateAnimationSpeed as any);
+        this.animationSpeedSlider.on("set", updateAnimationSpeed as any);
+    }
+
+
+    private prepareUiSliders() {
+        if (!this.context.widgetMode) {
+            this.setupRangeSliders();
+        }
+
+        this.prepareAnimationSliders();
+
+        const allSliders = this.htmlParent.getElementsByClassName("noUi-connect");
+        for (let s of allSliders) {
+            (s as any).style.background = "#36082a";
+        }
+    }
+
+    private setupRangeSliders() {
         const zUpdate = (newRange: string[]) => {
             this.cubeSelection.setRange(Dimension.Z, parseInt(newRange[0]), parseInt(newRange[1]));
             this.updateLabelsAfterChange();
@@ -1956,11 +2341,6 @@ class CubeInteraction {
         this.zSelectionSlider = this.prepareSlider(this.zSliderDiv, zUpdate, viewUpdate, zFormatter);
         this.ySelectionSlider = this.prepareSlider(this.ySliderDiv, yUpdate, viewUpdate, yFormatter);
         this.xSelectionSlider = this.prepareSlider(this.xSliderDiv, xUpdate, viewUpdate, xFormatter);
-
-        const allSliders = this.htmlParent.getElementsByClassName("noUi-connect");
-        for (let s of allSliders) {
-            (s as any).style.background = "#36082a";
-        }
     }
 
     private updateSliderLabels() {
@@ -1980,9 +2360,9 @@ class CubeInteraction {
         const yRange = this.cubeDimensions.yParameterRange;
         const xRange = this.cubeDimensions.xParameterRange;
         const sliderOffset = this.cubeTags.includes(CubeTag.LongitudeZeroIndexIsGreenwich) ? (Math.round(xRange.length() / 2)) : 0;
-        this.zSelectionSlider.updateOptions({range: { min: zRange.min, max: zRange.max }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
-        this.ySelectionSlider.updateOptions({range: { min: yRange.min, max: yRange.max }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
-        this.xSelectionSlider.updateOptions({range: { min: this.roundUpToSparsity(xRange.min + sliderOffset), max: this.roundDownToSparsity(xRange.max + sliderOffset - 1) }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
+        this.zSelectionSlider.updateOptions({ range: { min: zRange.min, max: zRange.max }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
+        this.ySelectionSlider.updateOptions({ range: { min: yRange.min, max: yRange.max }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
+        this.xSelectionSlider.updateOptions({ range: { min: this.roundUpToSparsity(xRange.min + sliderOffset), max: this.roundDownToSparsity(xRange.max + sliderOffset - 1) }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
         this.zSelectionSlider.off("update");
         this.ySelectionSlider.off("update");
         this.xSelectionSlider.off("update");
@@ -2006,7 +2386,7 @@ class CubeInteraction {
         const zSelectionRange = this.cubeSelection.getSelectionRangeByDimension(Dimension.Z);
         const ySelectionRange = this.cubeSelection.getSelectionRangeByDimension(Dimension.Y);
         const xSelectionRange = this.cubeSelection.getSelectionRangeByDimension(Dimension.X);
-        this.updateLabelsAfterChange();
+        // this.updateLabelsAfterChange();
 
         if (this.context.widgetMode) {
             return;
@@ -2015,13 +2395,13 @@ class CubeInteraction {
         const lonRange = this.cubeDimensions.xParameterRange;
         const sliderOffset = this.cubeTags.includes(CubeTag.LongitudeZeroIndexIsGreenwich) ? this.roundUpToSparsity(lonRange.length() / 2) : 0;
         const overflowBias = xSelectionRange.length() / lonRange.length() * 0.5; // magic value for good compromise between overflowing longitude slider value early and late
-        const lonIndex = Math.floor((xSelectionRange.min - sliderOffset) / this.cubeDimensions.x.steps + overflowBias); 
+        const lonIndex = Math.floor((xSelectionRange.min - sliderOffset) / this.cubeDimensions.x.steps + overflowBias);
         if (lonIndex != this.lastLonSliderIndex) {
             const newMinimum = this.roundDownToSparsity(lonIndex * this.cubeDimensions.x.steps + sliderOffset);
             const newMaximum = this.roundDownToSparsity(lonIndex * this.cubeDimensions.x.steps + lonRange.max + sliderOffset);
-            this.xSelectionSlider.updateOptions({ range: { min: newMinimum, max: newMaximum }}, false);
+            this.xSelectionSlider.updateOptions({ range: { min: newMinimum, max: newMaximum } }, false);
             this.lastLonSliderIndex = lonIndex;
-            
+
             this.xSelectionSlider.off("update");
             if (this.geospatialContextProvided) {
                 this.mergeSliderTooltips(this.xSliderDiv as any, 40, " - ");
@@ -2052,12 +2432,12 @@ class CubeInteraction {
         let id = this.selectedCube.shortName.indexOf("Hainich") > -1 ? "Hainich" : this.selectedCube.id;
         if (Object.keys(parameterAttributionMetadata).indexOf(id) == -1) {
             return undefined;
-        } 
+        }
         const additionalMetadata: [] = (parameterAttributionMetadata as any)[id];
         const p = additionalMetadata.find(a => a["key"] == parameter);
         if (!p) {
             return undefined;
-        }        
+        }
         return p as ParameterAttributionMetadata;
     }
 
@@ -2065,12 +2445,12 @@ class CubeInteraction {
         let id = this.selectedCube.shortName.indexOf("Hainich") > -1 ? "Hainich" : this.selectedCube.id;
         if (Object.keys(parameterCustomColormapsMetadata).indexOf(id) == -1) {
             return undefined;
-        } 
+        }
         const additionalMetadata: [] = (parameterCustomColormapsMetadata as any)[id];
         const p = additionalMetadata.find(a => a["key"] == parameter);
         if (!p) {
             return undefined;
-        }        
+        }
         return p as ParameterColormapMetadata;
     }
 
@@ -2102,7 +2482,7 @@ class CubeInteraction {
                 } else if (this.selectedCube.shortName.indexOf("Planet Fusion") > -1) {
                     cornerLine(`Source Project: Planet-Fusion, Planet`);
                 }
-            } else {   
+            } else {
                 cornerLineBold(p["long_name"]);
                 parameterLines.set("Parameter:", p["long_name"]);
                 if (p["project_name"]) cornerLine(`Data Source: ${p["project_name"]}`);
@@ -2135,7 +2515,7 @@ class CubeInteraction {
             cornerLineBold(attrs["long_name"]);
             parameterLines.set("Parameter:", attrs["long_name"]);
             if (this.selectedParameter.project) cornerLine(`Data Source: ${this.selectedParameter.project}`);
-        
+
             cornerLineUnderline(`Data attribution and license`);
             if (attrs["acknowledgment"]) parameterLines.set("Acknowledgment:", `${attrs["acknowledgment"]} (<a target="_blank" rel="noopener" href='${attrs["source"]}'>${attrs["source"]}</a>)`);
             parameterLines.set("Description:", attrs["description"]);
@@ -2207,9 +2587,9 @@ class CubeInteraction {
         // dialogParameterValue("<hr>");
         // dialogParameterHeading("Attribution")
         // dialogParameterValue(`<b>When using Lexcube-generated images acknowledge/cite</b>: M. Söchting, M. D. Mahecha, D. Montero and G. Scheuermann, "Lexcube: Interactive Visualization of Large Earth System Data Cubes," in IEEE Computer Graphics and Applications, doi: https://www.doi.org/10.1109/MCG.2023.3321989.`)
-        
+
         for (let line of dialogLines) {
-            dialogHtml +=`${line}`
+            dialogHtml += `${line}`
         }
         for (let line of cornerLines) {
             cornerHtml += `${line}`
@@ -2272,7 +2652,7 @@ class CubeInteraction {
         }
 
         this.context.tileData.resetDataStatistics();
-        
+
         if (this.cubeDimensions.z.type == CubeDimensionType.Time && this.selectedParameter.parameterCoverageTime.length() > 1) {
             this.cubeDimensions.zParameterRange.copy(this.selectedParameter.parameterCoverageTime);
         } else {
@@ -2328,7 +2708,7 @@ class CubeInteraction {
                 this.context.tileData.symmetricalColormapAroundZero = true;
                 this.context.tileData.ignoreStatisticalColormapBounds = true;
                 this.selectColormapByName("balance");
-            } else if (!this.context.widgetMode) { 
+            } else if (!this.context.widgetMode) {
                 this.selectArbitraryLinearColormap(this.htmlParameterSelect.options.selectedIndex + 2);
             }
         }
@@ -2336,16 +2716,20 @@ class CubeInteraction {
         this.updateColormapOverrideRangesFromUi();
         this.updateSlidersAndLabelsAfterChange();
         this.updateLabelPositions();
+
+        this.animationParameters = new AnimationParameters(Dimension.Z, this.cubeDimensions, this.selectedCubeMetadata.sparsity);
+        this.updateAnimationSliders();
+
         this.parameterBeingSelected = false;
         this.initialLoad = false;
         return true;
     }
-    
+
     async selectCube(logicalDataCube: LogicalDataCube) {
         this.context.log("Select cube", logicalDataCube.id)
         this.fullyLoaded = false;
         if (this.animationEnabled) {
-            this.stopAnimation();   
+            this.stopAnimation();
         }
         if (this.context.orchestrationMasterMode && this.selectedCube) {
             this.context.networking.pushOrchestratorCubeUpdate(logicalDataCube.id);
@@ -2367,7 +2751,7 @@ class CubeInteraction {
         }
 
         this.cubeTags = [];
-        
+
         this.cubeDimensions = new CubeDimensions(
             this.context,
             meta.dims_ordered,
@@ -2447,7 +2831,7 @@ class CubeInteraction {
         }
         this.geospatialContextProvided = geospatialContext.isValid();
         this.context.log("Geospatial context provided:", this.geospatialContextProvided);
-        
+
         if (this.geospatialContextProvided) {
             this.cubeDimensions.setGeospatialContext(geospatialContext.latMin!, geospatialContext.latMax!, geospatialContext.lonMin!, geospatialContext.lonMax!);
         }
@@ -2516,8 +2900,8 @@ class CubeInteraction {
 
     selectCubeById(cube_id: string) {
         this.findToSelectCube(cube_id);
-    }    
-    
+    }
+
     private async findToSelectCube(cube_id: string) {
         for (let c of this.availableCubes) {
             if (c.id.toLowerCase() == cube_id.toLowerCase()) {
@@ -2532,7 +2916,7 @@ class CubeInteraction {
     private updateAvailableCubesUi() {
         const s = this.htmlCubeSelect.options.length;
         for (let i = 0; i < s; i++) {
-            this.htmlCubeSelect.options.remove(0);        
+            this.htmlCubeSelect.options.remove(0);
         }
 
         for (const logicalDataCube of this.availableCubes) {
@@ -2542,7 +2926,7 @@ class CubeInteraction {
             this.htmlCubeSelect.options.add(option);
         }
     }
-    
+
     private async retrieveMetaData() {
         const status = await this.context.networking.fetch(`/api`);
         if (status["api_version"] != API_VERSION) {
@@ -2560,7 +2944,7 @@ class CubeInteraction {
         if (this.requestUrlFragmentUpdateTimeoutHandler || this.context.widgetMode) {
             return; //window.clearTimeout(this.requestUrlFragmentUpdateTimeoutHandler);
         }
-        this.requestUrlFragmentUpdateTimeoutHandler = window.setTimeout(() => { 
+        this.requestUrlFragmentUpdateTimeoutHandler = window.setTimeout(() => {
             this.updateUrlFragment();
             this.requestUrlFragmentUpdateTimeoutHandler = 0;
         }, this.requestUrlFragmentUpdateTimeoutMilliseconds);
@@ -2608,7 +2992,7 @@ class CubeInteraction {
 
         if (this.cubeTags.includes(CubeTag.CamsEac4Reanalysis)) {
             groupMapper = (p: Parameter) => {
-                if (p.longName.toLowerCase().includes("vertically integrated"))  return "Vertically Integrated Masses"
+                if (p.longName.toLowerCase().includes("vertically integrated")) return "Vertically Integrated Masses"
                 if (p.longName.toLowerCase().includes("total column")) return "Atmospheric Columns";
                 if (p.longName.toLowerCase().includes("aerosol") || p.longName.toLowerCase().includes("particulate")) return "Aerosols";
                 return "Meteorology";
@@ -2672,7 +3056,7 @@ class CubeInteraction {
             this.floatDisplaySignificance = newSignificance;
             this.updateColormapRangeUi();
             this.updateHoverInfoUi();
-        }    
+        }
     }
 
     private initializeColormapScale() {
@@ -2681,7 +3065,7 @@ class CubeInteraction {
         canvas.height = this.colormapScaleHeight;
         this.colormapScaleCanvasContext = canvas.getContext("2d")!;
         this.updateColormapScale(this.getColormapDataFromName(DEFAULT_COLORMAP));
-        this.htmlColormapScaleGradient.appendChild(canvas);        
+        this.htmlColormapScaleGradient.appendChild(canvas);
     }
 
     convertColormapDataToRGB8(source: number[][]) {
@@ -2693,7 +3077,7 @@ class CubeInteraction {
             const p0 = source[i];
             const p1 = source[i + 1];
             const p = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2];
-            data.splice(i*2 + 1, 0, p);
+            data.splice(i * 2 + 1, 0, p);
         }
 
         for (let i = 0; i < data.length; i++) {
@@ -2706,7 +3090,7 @@ class CubeInteraction {
 
     getColormapDataFromName(name: string) {
         const category = Object.keys(defaultColormaps).find(c => Object.keys((defaultColormaps as any)[c]).includes(name))!;
-        const source = (defaultColormaps as any)[category][name] as number[][];      
+        const source = (defaultColormaps as any)[category][name] as number[][];
         return this.convertColormapDataToRGB8(source);
     }
 
@@ -2736,23 +3120,23 @@ class CubeInteraction {
         canvas.height = 1;
         canvas.width = gradientResolution;
         const canvasContext = canvas.getContext("2d")!;
-        
+
         const colormapCategories = Object.keys(defaultColormaps);
         for (let category of colormapCategories) {
             const colormapNames = Object.keys((defaultColormaps as any)[category]);
             for (let j = 0; j < colormapNames.length; j++) {
                 const name = colormapNames[j];
                 const data = this.getColormapDataFromName(name);
-    
+
                 const button = document.createElement("button");
                 const gradient = canvasContext.createLinearGradient(0, 0, gradientResolution, 0);
-                
+
                 for (let i = 0; i < data.length; i++) {
                     const p = i / (data.length - 1);
                     const c = data[i]
                     gradient.addColorStop(p, `rgb(${c[0]}, ${c[1]}, ${c[2]})`);
                 }
-                
+
                 canvasContext.fillStyle = gradient;
                 canvasContext.fillRect(0, 0, gradientResolution, 1);
                 let img_b64 = canvas.toDataURL('image/png');
@@ -2765,7 +3149,7 @@ class CubeInteraction {
     }
 
     private selectArbitraryLinearColormap(parameterIndex: number) {
-        const names = ["viridian","algae","deep","dense","haline","ice","speed","tempo","turbid"]
+        const names = ["viridian", "algae", "deep", "dense", "haline", "ice", "speed", "tempo", "turbid"]
         this.selectColormapByName(names[parameterIndex % names.length]);
     }
 
@@ -2843,7 +3227,7 @@ class CubeInteraction {
             }
             const zoomFactorDistance = clamp(zoomFactorDifference, 0.0, 2.0);
             const p = zoomFactorDistance / 2.0;
-            newCenterPoint = this.currentZoomOldCenterPoint.clone().multiplyScalar(1-p).add(this.currentZoomNewCenterPoint.clone().multiplyScalar(p));
+            newCenterPoint = this.currentZoomOldCenterPoint.clone().multiplyScalar(1 - p).add(this.currentZoomNewCenterPoint.clone().multiplyScalar(p));
         }
 
         // WIP: keep manually chosen aspect ratios; but no way to "leave it"
@@ -2890,7 +3274,7 @@ class CubeInteraction {
     reconstructZoomFactor(face: CubeFace, onlyAssignIfDifferent: boolean = false) {
         const maxDisplaySize = this.getDisplaySizeBounds(face).maxDisplaySize;
         const displaySize = this.cubeSelection.getSizeVector(face).clone().divide(maxDisplaySize);
-        
+
         const newZoomFactor = clamp(1.0 - Math.log2(Math.min(displaySize.x, displaySize.y)), 1.0, MAX_ZOOM_FACTOR);
         const zoomFactorDifference = Math.abs(newZoomFactor - this.currentZoomFactor[Math.floor(face / 2)]);
         if (!onlyAssignIfDifferent || (zoomFactorDifference > 0.3)) {
@@ -2900,15 +3284,15 @@ class CubeInteraction {
     }
 
     roundToSparsity(value: number) {
-        return Math.round(value / this.selectedCubeMetadata.sparsity) * this.selectedCubeMetadata.sparsity;
+        return roundToSparsity(value, this.selectedCubeMetadata.sparsity);
     }
 
     roundUpToSparsity(value: number) {
-        return Math.ceil(value / this.selectedCubeMetadata.sparsity) * this.selectedCubeMetadata.sparsity;
+        return roundUpToSparsity(value, this.selectedCubeMetadata.sparsity);
     }
 
     roundDownToSparsity(value: number) {
-        return Math.floor(value / this.selectedCubeMetadata.sparsity) * this.selectedCubeMetadata.sparsity;
+        return roundDownToSparsity(value, this.selectedCubeMetadata.sparsity);
     }
 
     getMinimumDisplayOffset(face: CubeFace) {
@@ -2943,7 +3327,7 @@ class CubeInteraction {
                 continue;
             }
             const lod = this.context.rendering.lods[face];
-            
+
             // const key = "(indexValue), lodValue, tileX, tileY"
             const d = TILE_SIZE * Math.pow(2, lod);
             let xValues: number[] = [];
@@ -2996,7 +3380,7 @@ class CubeInteraction {
             this.renderedAfterAllTilesDownloaded = false;
         }
         // this.context.log(`Triggered ${tilesToDownload.length} tile downloads`)
-        
+
         const finishedTiles = visibleTiles.filter(t => this.context.tileData.isTileDownloadFinished(t))
         const faces = this.getVisibleFaces();
         for (let face of faces) {
@@ -3006,7 +3390,7 @@ class CubeInteraction {
             }
         }
     }
-    
+
     private parseEuropeanDate(dateString: string): Date { // Parses DD.MM.YYYY
         const split = dateString.split(/(\-|\.|\/)/);
         return new Date(`${split[2]}-${split[0]}-${split[4]}`);
@@ -3019,7 +3403,7 @@ class CubeInteraction {
     getAvailableParameters() {
         return Array.from(this.htmlParameterSelect.options).map(o => o.value);;
     }
-    
+
     getRenderedAfterAllTilesDownloaded() {
         // console.log("get", this.renderedAfterAllTilesDownloaded)
         return this.renderedAfterAllTilesDownloaded;
@@ -3041,16 +3425,15 @@ class CubeInteraction {
     }
 
     private attemptNextAnimationStep() {
-        if (this.animationCurrentStep >= this.animationTotalSteps) {
+        if (!this.animationParameters.increaseStep()) {
             this.stopAnimation();
             return;
-        }        
-        this.animationCurrentStep += 1;
+        }
         const lastStepTime = performance.now() - this.animationLastStepTime;
-        const targetTime = 1.0 / this.animationTargetFps * 1000.0;
-        const w = Math.max(0, targetTime - lastStepTime); 
+        const targetTime = 1.0 / this.animationParameters.getFps() * 1000.0;
+        const w = Math.max(0, targetTime - lastStepTime);
         if (w > 0) {
-            window.setTimeout(this.nextAnimationStep.bind(this), w)
+            window.setTimeout(this.nextAnimationStep.bind(this), w);
         } else {
             this.nextAnimationStep();
         }
@@ -3061,25 +3444,12 @@ class CubeInteraction {
 
     private nextAnimationStep() {
         this.animationLastStepTime = performance.now();
-        if (this.animationTimeIncrementPerStep == -1) {
-            const timeMax = this.cubeDimensions.zParameterRange.length();
-            const targetSteps = timeMax / this.selectedCubeMetadata.sparsity;
-            this.animationVisibleTimeWindow = this.roundToSparsity(timeMax / 5.0);
-            this.animationTimeIncrementPerStep = Math.max(this.roundToSparsity((timeMax - this.animationVisibleTimeWindow) / targetSteps), this.selectedCubeMetadata.sparsity);
-            this.animationTotalSteps = Math.floor((timeMax - this.animationVisibleTimeWindow) / this.animationTimeIncrementPerStep);
-            this.context.log("First animation frame: Time increment is", this.animationTimeIncrementPerStep, "Total step is", this.animationTotalSteps)
-        }
-        const a = this.animationTimeIncrementPerStep * this.animationCurrentStep;
-        const min = this.roundUpToSparsity(this.cubeDimensions.zParameterRange.min + a);
-        const max = this.roundDownToSparsity(min + this.animationVisibleTimeWindow);
-        // if (max > this.cubeDimensions.timeParameterRange.max) {
-        //     console.warn("Yep this is not going to work", max, this.cubeDimensions.timeParameterRange.max)
-        // }
-        this.cubeSelection.setRange(Dimension.Z, min, max);
+        const range = this.animationParameters.getAnimationRangeFromStep();
+        this.cubeSelection.setRange(this.animationParameters.getDimension(), range.min, range.max);
         this.updateSlidersAndLabelsAfterChange();
         this.context.rendering.updateVisibilityAndLods();
     }
-    
+
     getColormapMinMaxValuePrecision() {
         if (this.cubeTags.includes(CubeTag.SpectralIndices)) {
             return 1;
@@ -3158,7 +3528,7 @@ class CubeInteraction {
             this.htmlPrintTemplateDownloadButtonSvg.href = svgUrl;
             this.htmlPrintTemplateDownloadButtonSvg.download = `${this.context.interaction.selectedCube.id}-${this.context.interaction.selectedParameterId}-print-template.svg`;
             this.htmlPrintTemplateDownloadButtonPng.href = "";
-    
+
             const svgImage = document.createElement('img');
             svgImage.crossOrigin = "anonymous";
             svgImage.style.maxWidth = "100%";
@@ -3176,10 +3546,10 @@ class CubeInteraction {
                 canvasCtx.fillStyle = "white";
                 canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
                 canvasCtx.drawImage(svgImage, 0, 0, canvas.width, canvas.height);
-    
+
                 this.htmlPrintTemplateLoadingSection.style.display = "none";
                 this.htmlPrintTemplateResultSection.style.display = "flex";
-                
+
                 const imgData = canvas.toDataURL('image/png');
                 this.htmlPrintTemplateDownloadButtonPng.href = imgData;
                 this.htmlPrintTemplateDownloadButtonPng.download = `${this.context.interaction.selectedCube.id}-${this.context.interaction.selectedParameterId}-print-template.png`;
