@@ -979,13 +979,18 @@ class CubeRendering {
         let dataUrl = "";
         const uiClasses = ["bottom-left-ui", "axis-label-parent"];
         const filterClasses = (node: HTMLElement) => {
-            let exclusionClasses = ["toolbar-ui", "status-message", "dataset-info-wrapper", "options-ui", "hover-info-ui"];
+            let exclusionClasses = ["toolbar-ui", "status-message", "dataset-info-wrapper", "options-ui", "hover-info-ui", "print-template-result-wrapper", "print-template-wrapper"];
             if (!includeUi) {
                 exclusionClasses = exclusionClasses.concat(uiClasses);
             }
             return !exclusionClasses.some((classname) => node.classList?.contains(classname));
         }
-        dataUrl = await toPng(this.parent, { filter: filterClasses, pixelRatio: window.devicePixelRatio * dpiscale, style: { backgroundColor: "transparent" } });
+        try {
+            dataUrl = await toPng(this.parent, { "filter": filterClasses, "pixelRatio": window.devicePixelRatio * dpiscale, "style": { backgroundColor: "transparent" } });
+        } catch (e) {
+            console.error("Error during screenshot generation", e);
+            return;
+        }
         let a = document.createElement('a');
         a.href = dataUrl;
         const cubeName = this.context.interaction.selectedCube.id !== "default" ? `${this.context.interaction.selectedCube.id}-` : "";
