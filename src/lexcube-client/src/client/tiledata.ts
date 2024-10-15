@@ -16,7 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { Color, DataArrayTexture, PixelFormat, Texture, LuminanceAlphaFormat, RedFormat, FloatType } from 'three'
+import { Color, DataArrayTexture, Texture, RedFormat, FloatType, LinearFilter, NearestFilter, ClampToEdgeWrapping } from 'three'
 
 import { COLORMAP_STEPS, CubeFace, Dimension, LOSSLESS_TILE_MAGIC_NUMBER, NAN_REPLACEMENT_VALUE, NAN_TILE_MAGIC_NUMBER, NOT_LOADED_REPLACEMENT_VALUE, TILE_FORMAT_MAGIC_BYTES, TILE_SIZE, TILE_VERSION } from './constants';
 import { CubeClientContext } from './client';
@@ -94,13 +94,13 @@ class Tile {
 }
 
 class ColormapEntry {
-    constructor(value: number, color: THREE.Color) {
+    constructor(value: number, color: Color) {
         this.value = value;
         this.color = color;
     }
 
     value: number;
-    color: THREE.Color;
+    color: Color;
 }
 
 class TileData {
@@ -111,6 +111,7 @@ class TileData {
     statisticalColormapLowerBound = 0;
     statisticalColormapUpperBound = 0;
     
+    private linearTextureFilteringEnabled;
 
     observedMinValue = Infinity;
     observedMaxValue = -Infinity;
@@ -153,6 +154,7 @@ class TileData {
 
     constructor(context: CubeClientContext) {
         this.context = context;
+        this.linearTextureFilteringEnabled = this.context.linearTextureFilteringEnabled;
     }
     
 
@@ -290,20 +292,16 @@ class TileData {
         }
     }
 
-    private putResampledTileInStorage(tile: Tile, data: ArrayBuffer, nanMask: ArrayBuffer | undefined, resampleResolution: number, replaceRealNans: boolean = false) {
-        const seemsLikeFloat64 = data.byteLength == (TILE_SIZE * TILE_SIZE * 8);
-        let values = seemsLikeFloat64 ? new Float64Array(data) : new Float32Array(data);
-        // console.log(`Putting tile in storage: ${tile}`);
-        if (values.length != TILE_SIZE * TILE_SIZE) {
-            console.warn(`Badly sized value array passed to putTile (${values.length} instead of ${TILE_SIZE * TILE_SIZE})`)
-        }
-        let xTiles = this.context.interaction.cubeDimensions.xTilesForFace(tile.face, tile.lod);
-
+    patchTileValues(tile: Tile, values: Float32Array | Float64Array, nanMask: ArrayBuffer | undefined, resampleResolution: number, replaceRealNans: boolean) {
+        let anyNanToDisableLinearTextureFiltering = false;
         if (replaceRealNans) {
             for (let i = 0; i < values.length; i++) {
                 if (isNaN(values[i])) {
                     values[i] = NAN_REPLACEMENT_VALUE;
                 }
+            }
+            if (this.linearTextureFilteringEnabled) {
+                anyNanToDisableLinearTextureFiltering = anyNanToDisableLinearTextureFiltering || values.some(v => isNaN(v));
             }
         }
         if (nanMask) {
@@ -313,7 +311,64 @@ class TileData {
                     values[i] = NAN_REPLACEMENT_VALUE;
                 }
             }
+            if (this.linearTextureFilteringEnabled) {
+                anyNanToDisableLinearTextureFiltering = anyNanToDisableLinearTextureFiltering || nanValues.some(v => v != 0);
+            }
         }
+        
+        const overflowing = this.applyOverflowingTileFix(tile, values, resampleResolution);
+
+        if (anyNanToDisableLinearTextureFiltering && this.linearTextureFilteringEnabled && !overflowing) { // overflow tiles always contain NaN, hence we ignore them
+            this.disableLinearTextureFiltering();
+        }
+    }
+    
+    private applyOverflowingTileFix(tile: Tile, values: Float32Array | Float64Array, resampleResolution: number = 1) {
+        const overflowInfo = this.context.interaction.cubeDimensions.getOverflowEdgeTileInfo(tile);
+        if (!overflowInfo.overflowing) {
+            return;
+        }
+        const pixelFillAmount = (Math.pow(2, tile.lod) + 3) * resampleResolution;
+        const resampleFactor = 1 / resampleResolution;
+        if (resampleFactor != 1) {
+            if (overflowInfo.overflowingX) {
+                overflowInfo.xCutoff = Math.floor(overflowInfo.xCutoff * resampleFactor);
+            }
+            if (overflowInfo.overflowingY) {
+                overflowInfo.yCutoff = Math.floor(overflowInfo.yCutoff * resampleFactor);
+            }
+        }
+
+        // fill right side with previous column values
+        if (overflowInfo.overflowingX) {
+            const xMin = overflowInfo.xCutoff;
+            for (let y = 0; y < Math.min(overflowInfo.yCutoff + pixelFillAmount, TILE_SIZE); y++) {
+                const value = values[xMin - 1 + y * TILE_SIZE];
+                values.set(Array(pixelFillAmount).fill(value), xMin + y * TILE_SIZE);
+            }
+        }
+
+        if (overflowInfo.overflowingY) {
+            // fill bottom (and diagonal bottom right) side with previous row values
+            const yRowToCopy = overflowInfo.yCutoff - 1;
+            const copiedRow = values.slice(yRowToCopy * TILE_SIZE, yRowToCopy * TILE_SIZE + Math.min(overflowInfo.xCutoff + pixelFillAmount, TILE_SIZE));
+            for (let y = overflowInfo.yCutoff; y < Math.min(overflowInfo.yCutoff + pixelFillAmount, TILE_SIZE); y++) {
+                values.set(copiedRow, y * TILE_SIZE);
+            }
+        }
+        return overflowInfo.overflowing;
+    }
+
+    private putResampledTileInStorage(tile: Tile, data: ArrayBuffer, nanMask: ArrayBuffer | undefined, resampleResolution: number, replaceRealNans: boolean = false) {
+        const seemsLikeFloat64 = data.byteLength == (TILE_SIZE * TILE_SIZE * 8);
+        let values = seemsLikeFloat64 ? new Float64Array(data) : new Float32Array(data);
+        // console.log(`Putting tile in storage: ${tile}`);
+        if (values.length != TILE_SIZE * TILE_SIZE) {
+            console.warn(`Badly sized value array passed to putTile (${values.length} instead of ${TILE_SIZE * TILE_SIZE})`)
+        }
+        let xTiles = this.context.interaction.cubeDimensions.xTilesForFace(tile.face, tile.lod);
+
+        this.patchTileValues(tile, values, nanMask, resampleResolution, replaceRealNans);
 
         const tileIndex = tile.x + tile.y * xTiles;
         const startIndex = tileIndex * TILE_SIZE * TILE_SIZE;
@@ -347,21 +402,7 @@ class TileData {
         const tileIndex = tile.x + tile.y * xTiles;
         const startIndex = tileIndex * TILE_SIZE * TILE_SIZE;
 
-        if (replaceRealNans) {
-            for (let i = 0; i < values.length; i++) {
-                if (isNaN(values[i])) {
-                    values[i] = NAN_REPLACEMENT_VALUE;
-                }
-            }
-        }
-        if (nanMask) {
-            const nanValues = new Float32Array(nanMask);
-            for (let i = 0; i < nanValues.length; i++) {
-                if (nanValues[i] != 0) {
-                    values[i] = NAN_REPLACEMENT_VALUE;
-                }
-            }
-        }
+        this.patchTileValues(tile, values, nanMask, 1, replaceRealNans);
 
         this.tileStoragesFloat[tile.face][tile.lod].set(values, startIndex);
     }
@@ -457,17 +498,6 @@ class TileData {
         return true;
     }
 
-    // selectColormapByName(name: string) {
-    //     console.log("Select colormap by name", name);
-    //     for (let i = 0; i < colormapPresets.length; i++) {
-    //         if (colormapPresets[i].Name == name) {
-    //             this.selectColormap(i);
-    //             return true;
-    //         }
-    //     }
-    //     return false;
-    // }
-
     private getColorFromColormap(p: number) {
         const colors = this.currentColormap;
 
@@ -541,8 +571,11 @@ class TileData {
         
         const texture = new DataArrayTexture(this.tileStoragesFloat[face][lod], TILE_SIZE, TILE_SIZE, totalTiles);
         // texture.generateMipmaps = true;
-        // texture.magFilter = THREE.LinearFilter;
-        // texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = NearestFilter;
+        texture.minFilter = this.linearTextureFilteringEnabled ? LinearFilter : NearestFilter;
+        this.context.log("Creating texture with minFilter: ", texture.minFilter == NearestFilter ? "NearestFilter" : "LinearFilter")
+        texture.wrapS = ClampToEdgeWrapping;
+        texture.wrapT = ClampToEdgeWrapping;
         // texture.needsUpdate = true;
         texture.format = RedFormat;
         texture.type = FloatType;
@@ -550,6 +583,23 @@ class TileData {
         // console.log(`Cube side ${CubeFace[face]}, LoD ${lod}, TotalTiles ${totalTiles}, allocating ${totalBytes / (1024)} KB`)
         this.totalBytesAllocated += totalBytes;
         this.context.log(`Allocated CPU-side tile storage for face ${CubeFace[face]}, LoD ${lod} (new: ${totalBytes / (1024 * 1024)} MB, total: ${this.totalBytesAllocated / (1024 * 1024)} MB)`)
+    }
+
+    private disableLinearTextureFiltering() {
+        this.linearTextureFilteringEnabled = false;
+        this.context.log("Linear minFilter on all textures disabled");
+
+        for (let face = 0; face < 6; face++) {
+            for (let lod = 0; lod <= this.context.interaction.selectedCubeMetadata.max_lod; lod++) {
+                const material = this.context.rendering.cube.material[face];
+                const texture = material.uniforms[`tilesLod${lod}`].value as DataArrayTexture;
+                if (!texture) {   
+                    continue;
+                }
+                texture.minFilter = NearestFilter;
+                texture.needsUpdate = true;
+            }
+        }
     }
     
     resetTileStatistics() {
@@ -574,6 +624,7 @@ class TileData {
         this.statisticalColormapLowerBound = 0;
         this.statisticalColormapUpperBound = 0;
         this.colorsNotFound = 0;
+        this.linearTextureFilteringEnabled = this.context.linearTextureFilteringEnabled;
     }
 
     resetTileMaps() {
@@ -594,7 +645,7 @@ class TileData {
         const xTiles = this.context.interaction.cubeDimensions.xTilesForFace(face, lod);
         const tileIndex = tileX + tileY * xTiles;
         const indexOffset = tileIndex * TILE_SIZE * TILE_SIZE;
-        if (this.tileStoragesFloat[face][lod].length == 0) {
+        if (!this.tileStoragesFloat[face][lod] || this.tileStoragesFloat[face][lod].length == 0) {
             return { 
                 value: NaN, 
                 isDataNan: false, 

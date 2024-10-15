@@ -355,6 +355,17 @@ class CubeRendering {
     
         uniform int lod;
 
+        vec2 positiveModTotalSize(vec2 v) {
+            if (overflowX && overflowY) {
+                return mod(v + totalSize, totalSize);
+            } else if (overflowX) {
+                return vec2(mod(v.x + totalSize.x, totalSize.x), v.y);
+            } else if (overflowY) {
+                return vec2(v.x, mod(v.y + totalSize.y, totalSize.y));
+            }
+            return v;
+        }
+
         vec2 positiveMod1(vec2 v) {
             if (overflowX && overflowY) {
                 return mod(mod(v, 1.0) + vec2(1.0), 1.0);
@@ -377,22 +388,24 @@ class CubeRendering {
         }
 
         void main() {
+            vec2 display_uv = clamp(positiveMod1(v_uv * displaySize / totalSize + displayOffset / totalSize), vec2(0.0), totalSize - vec2(1.0)); 
+
+            float tile_size_adjusted = TILE_SIZE * pow(2.0, float(lod));
             vec2 total_tiles = totalSize * pow(0.5, float(lod)) / TILE_SIZE;
             vec2 total_tiles_whole = ceil(total_tiles);
-            vec2 uv_offset = displayOffset / totalSize;
-            vec2 display_ratio = displaySize / totalSize;
 
-            // clamp dimensions to never reach 1 - in case of non-256 tiles (edge tiles) prevents flickering NaN values at cube edges
-            vec2 display_uv_minimum = 1.0 / totalSize;
-            vec2 display_uv_maximum = (totalSize - vec2(3.0)) / totalSize; // 3.0 is for some reason the lowest number where the artifacts disappear
-            vec2 display_uv = clamp(positiveMod1(v_uv * display_ratio + uv_offset), display_uv_minimum, display_uv_maximum); 
+            vec2 unclamped_pixel = positiveModTotalSize(displayOffset + clamp(v_uv, vec2(0.00001), vec2(0.99999)) * displaySize); // prevent pixel bleeding artifacts at edges
+            vec2 minimum = mix(displayOffset, vec2(0.0), vec2(float(unclamped_pixel.x < displayOffset.x), float(unclamped_pixel.y < displayOffset.y)));
+            vec2 maximum = displayOffset + displaySize; // exclusive bound, already next non-visible pixel at this coordinate
+
+            vec2 clamp_border = vec2(0.01); // vec2(0.5) definitely removes all artifacts, vec2(0.01) also seems to remove all artifacts
+            vec2 pixel = clamp(unclamped_pixel, minimum + clamp_border, maximum - clamp_border); // prevent pixel bleeding artifacts at edges
     
-            vec2 selected_tile = clamp(floor(display_uv * total_tiles), vec2(0.0), total_tiles_whole - vec2(1.0));
+            vec2 selected_tile = clamp(floor(pixel / tile_size_adjusted), vec2(0.0), total_tiles_whole - vec2(1.0));
             float selected_tile_index = selected_tile.x + selected_tile.y * total_tiles_whole.x;
-            vec2 local_tile_uv = (display_uv - (selected_tile / total_tiles)) * total_tiles;
-            local_tile_uv = floor(local_tile_uv * TILE_SIZE) / TILE_SIZE;
-    
-            vec4 color = vec4(0.0);
+
+            vec2 local_tile_uv = (pixel - selected_tile * tile_size_adjusted) / tile_size_adjusted;
+
             float datavalue = 0.0;
             if (lod == 0) {
                 datavalue = (texture(tilesLod0, vec3(local_tile_uv, selected_tile_index))).r;

@@ -117,10 +117,10 @@ class Cube3DWidget(widgets.DOMWidget):
         if (axis == 0 and self.zwrap) or (axis == 1 and self.ywrap) or (axis == 2 and self.xwrap):
             max_value = 2 * max_value
             wrapping = True
-        if proposal < 0 or proposal >= max_value:
+        if proposal < 0 or proposal > max_value:
             if wrapping:
                 raise TraitError(f"Boundary of axis {axis} needs to be within double the range of the data source (considering this dimension wraps around the cube): 0 <= value < {max_value}")
-            raise TraitError(f"Boundary of axis {axis} needs to be within the range of the data source: 0 <= value < {max_value}")
+            raise TraitError(f"Boundary of axis {axis} needs to be within the range of the data source: 0 <= value <= {max_value}")
         return proposal
 
 

@@ -155,7 +155,7 @@ class AnimationParameters {
 
     getAnimationRangeFromStep() {
         const a = this.incrementPerStep * this.currentStep;
-        const min = roundUpToSparsity(Math.min(this.parameterRange.min + a, this.parameterRange.max - this.visibleWindow), this.sparsity);
+        const min = roundUpToSparsity(Math.min(this.parameterRange.min + a, this.parameterRange.max - this.visibleWindow - 1), this.sparsity);
         const max = roundDownToSparsity(min + this.visibleWindow, this.sparsity);
         return { min, max };
     }
@@ -457,9 +457,9 @@ class CubeDimensions {
     z: CubeDimension;
 
     // Valid coverage ranges of the current parameter
-    zParameterRange: ParameterRange = new ParameterRange();
-    yParameterRange: ParameterRange = new ParameterRange();
-    xParameterRange: ParameterRange = new ParameterRange();
+    zParameterRange: ParameterRange = new ParameterRange(-1, -1, true);
+    yParameterRange: ParameterRange = new ParameterRange(-1, -1, true);
+    xParameterRange: ParameterRange = new ParameterRange(-1, -1, true);
 
     geospatialContextProvided: boolean = false;
     // in degrees
@@ -475,7 +475,6 @@ class CubeDimensions {
         this.x = new CubeDimension(this, Dimension.X, dimensionNames[2], dimensionSizes[dimensionNames[2]], indices["x"], null);
         this.y = new CubeDimension(this, Dimension.Y, dimensionNames[1], dimensionSizes[dimensionNames[1]], indices["y"], null);
         this.z = new CubeDimension(this, Dimension.Z, dimensionNames[0], dimensionSizes[dimensionNames[0]], indices["z"], null);
-        console.log("CubeDimensions", this);
     }
 
     setGeospatialContext(geospatialLatitudeMin: number, geospatialLatitudeMax: number, geospatialLongitudeMin: number, geospatialLongitudeMax: number) {
@@ -526,12 +525,40 @@ class CubeDimensions {
         }
     }
 
-    xTilesForFace(face: CubeFace, lod: number) {
-        return Math.ceil((this.totalWidthForFace(face) * Math.pow(0.5, lod)) / TILE_SIZE)
+    getOverflowEdgeTileInfo(tile: Tile) {
+        const xTiles = this.xTilesForFace(tile.face, tile.lod);
+        const yTiles = this.yTilesForFace(tile.face, tile.lod);
+        const xTilesUnrounded = this.xTilesForFaceUnrounded(tile.face, tile.lod);
+        const yTilesUnrounded = this.yTilesForFaceUnrounded(tile.face, tile.lod);
+
+        const overflowingX = tile.x == xTiles - 1 && xTiles != xTilesUnrounded;
+        const overflowingY = tile.y == yTiles - 1 && yTiles != yTilesUnrounded;
+
+        if (overflowingX || overflowingY) {
+            return { overflowing: true, 
+                overflowingX,
+                overflowingY,
+                xCutoff: overflowingX ? Math.floor((xTilesUnrounded % 1) * TILE_SIZE) : TILE_SIZE, 
+                yCutoff: overflowingY ? Math.floor((yTilesUnrounded % 1) * TILE_SIZE) : TILE_SIZE
+            };
+        }
+        return { overflowing: false, overflowingX: false, overflowingY: false, xCutoff: 0, yCutoff: 0 };
     }
 
+    private xTilesForFaceUnrounded(face: CubeFace, lod: number) {
+        return (this.totalWidthForFace(face) * Math.pow(0.5, lod)) / TILE_SIZE;
+    }
+
+    xTilesForFace(face: CubeFace, lod: number) {
+        return Math.ceil(this.xTilesForFaceUnrounded(face, lod));
+    }
+
+    private yTilesForFaceUnrounded(face: CubeFace, lod: number) {
+        return (this.totalHeightForFace(face) * Math.pow(0.5, lod)) / TILE_SIZE
+    }
+    
     yTilesForFace(face: CubeFace, lod: number) {
-        return Math.ceil((this.totalHeightForFace(face) * Math.pow(0.5, lod)) / TILE_SIZE)
+        return Math.ceil(this.yTilesForFaceUnrounded(face, lod));
     }
 
     totalTilesForFace(face: CubeFace, lod: number) {
@@ -586,11 +613,18 @@ class CubeDimensions {
         return `${degrees}°${wholeMinutes}'${seconds}"`;
     }
 
-    roundParameterRangesToSparsity() {
+    setInitialParameterRanges(parameterCoverageTime: ParameterRange) {
         const int = this.context.interaction;
-        this.yParameterRange.set(int.roundUpToSparsity(this.yParameterRange.min), int.roundDownToSparsity(this.yParameterRange.max));
-        this.xParameterRange.set(int.roundUpToSparsity(this.xParameterRange.min), int.roundDownToSparsity(this.xParameterRange.max));
-        this.zParameterRange.set(int.roundUpToSparsity(this.zParameterRange.min), int.roundDownToSparsity(this.zParameterRange.max));
+        if (this.z.type == CubeDimensionType.Time && parameterCoverageTime.length() > 0) {
+            this.zParameterRange.set(int.roundUpToSparsity(parameterCoverageTime.min), int.roundDownToSparsity(parameterCoverageTime.max - 1) + 1);
+        } else {
+            this.zParameterRange.set(0, int.roundDownToSparsity(this.z.steps - 1) + 1);
+        }
+
+        this.xParameterRange.set(0, int.roundDownToSparsity(this.x.steps - 1) + 1);
+        this.yParameterRange.set(0, int.roundDownToSparsity(this.y.steps - 1) + 1);
+        // console.log("Initial parameter ranges", this.xParameterRange.toString(), this.yParameterRange.toString(), this.zParameterRange.toString());
+        // after this, the ranges should be inclusive, with the upper boundary being the highest, sparsity-rounded value less than the steps value
     }
 
     getParameterRangeByDimension(dimension: Dimension) {
@@ -660,7 +694,7 @@ class Parameter {
         this.fixedColormapFlipped = colormapData?.colormapFlipped || false;
         this.sourceData = sourceData;
         // this.parameterCoverageTime = new ParameterRange(selectedCubeDimensions.getTimeIndex(this.coverageStartDate), selectedCubeDimensions.getTimeIndex(this.coverageEndDate));
-        this.parameterCoverageTime = new ParameterRange(sourceData["first_valid_time_slice"], sourceData["last_valid_time_slice"]);
+        this.parameterCoverageTime = new ParameterRange(sourceData["first_valid_time_slice"], sourceData["last_valid_time_slice"] + 1);
         this.patchMetadata();
     }
 
@@ -732,17 +766,21 @@ class ParameterRange {
     min: number;
     max: number; // Upper bound is EXCLUSIVE
 
-    constructor(min: number = 0, max: number = 0) {
+    private validateSize: boolean = false;
+    static sparsity: number = 1;
+
+    constructor(min: number = 0, max: number = 0, validateSize: boolean = false) {
         this.min = min;
         this.max = max;
+        this.validateSize = validateSize;
     }
 
     public length() {
         return this.max - this.min;
     }
 
-    public toString() {
-        return `${this.min}-${this.max}`;
+    public toString(maxOffset: number = 0) {
+        return `${this.min}-${this.max + maxOffset}`;
     }
 
     subRangeOf(outerRange: ParameterRange, overflowAllowed: boolean = false) {
@@ -755,12 +793,17 @@ class ParameterRange {
     copy(other: ParameterRange) {
         this.min = other.min;
         this.max = other.max;
+        this.validateSize = other.validateSize;
+        this.validate();
         return this;
     }
 
-    set(min: number, max: number) {
+    set(min: number, max: number, finalChange: boolean = true) {
         this.min = min;
         this.max = max;
+        if (finalChange) {
+            this.validate();
+        }
         return this;
     }
 
@@ -774,6 +817,17 @@ class ParameterRange {
 
     equals(other: ParameterRange) {
         return this.min == other.min && this.max == other.max;
+    }
+
+    private validate() {
+        if (!this.validateSize) {
+            return;
+        }
+        const minValid = this.min % ParameterRange.sparsity == 0;
+        const maxValid = (this.max - 1) % ParameterRange.sparsity == 0;
+        if (!minValid || !maxValid) {
+            throw new Error(`Invalid range ${this} for sparsity ${ParameterRange.sparsity}`);
+        }
     }
 }
 
@@ -796,19 +850,19 @@ class CubeSelection {
         const is = this.context.interaction.initialSelectionState;
         this.ySelectionRange = dims.yParameterRange.clone();
         if (!context.widgetMode) {
-            this.xSelectionRange = new ParameterRange(0, context.interaction.roundDownToSparsity(dims.xParameterRange.max / context.interaction.XYdataAspectRatio));
+            this.xSelectionRange = new ParameterRange(0, context.interaction.roundDownToSparsity(dims.xParameterRange.max / context.interaction.XYdataAspectRatio) + 1, true);
         } else {
             this.xSelectionRange = dims.xParameterRange.clone();
         }
         if (context.interaction.cubeTags.includes(CubeTag.ESDC)) {
-            const l = this.xSelectionRange.length();
+            const l = this.xSelectionRange.length() - 1; // -1 to get identical views as before range refactor
             const offset = this.context.interaction.roundUpToSparsity(l * 0.83);
-            this.xSelectionRange.set(offset, this.context.interaction.roundDownToSparsity(offset + l - 1))
+            this.xSelectionRange.set(offset, this.context.interaction.roundDownToSparsity(offset + l - 1) + 1);
         }
         if (context.interaction.cubeTags.includes(CubeTag.CamsEac4Reanalysis) || context.interaction.cubeTags.includes(CubeTag.Era5SpecificHumidity)) {
-            const l = this.xSelectionRange.length();
+            const l = this.xSelectionRange.length() - 3; // -1 to get identical views as before range refactor
             const offset = this.context.interaction.roundUpToSparsity(l * 1.8);
-            this.xSelectionRange.set(offset, this.context.interaction.roundDownToSparsity(offset + l - 1))
+            this.xSelectionRange.set(offset, this.context.interaction.roundDownToSparsity(offset + l - 1) + 1);
         }
         this.zSelectionRange = dims.zParameterRange.clone();
 
@@ -829,8 +883,9 @@ class CubeSelection {
         if (!parsedRange) {
             return;
         }
-        const s = new ParameterRange(this.context.interaction.roundUpToSparsity(parsedRange[0]), this.context.interaction.roundDownToSparsity(parsedRange[1]));
-        if (s.length() > 1 && s.subRangeOf(parameterRange)) {
+        // TODO: valid overflown ranges are not parsed
+        const s = new ParameterRange(this.context.interaction.roundUpToSparsity(parsedRange[0]), this.context.interaction.roundDownToSparsity(parsedRange[1]) + 1);
+        if (s.length() > 0 && s.subRangeOf(parameterRange)) {
             selectionRange.copy(s);
             this.context.log("Parsed initial selection range", s);
         }
@@ -865,7 +920,7 @@ class CubeSelection {
             return false;
         }
         const parameterRange = this.context.interaction.cubeDimensions.getParameterRangeByDimension(dimension);
-        if (attemptedRange.length() > 1 && attemptedRange.subRangeOf(parameterRange, this.context.rendering.overflow[dimension])) {
+        if (attemptedRange.length() >= 1 && attemptedRange.subRangeOf(parameterRange, this.context.rendering.overflow[dimension])) {
             selectionRange.copy(attemptedRange);
             return true;
         } else {
@@ -893,13 +948,14 @@ class CubeSelection {
     private roundSizeToSparsity(size: Vector2, face: CubeFace) {
         const maxX = this.context.interaction.cubeDimensions.totalWidthForFace(face);
         const maxY = this.context.interaction.cubeDimensions.totalHeightForFace(face);
-        return this.roundVectorToSparsity(size, 0, maxX, 0, maxY);
+        const v = this.roundVectorToSparsity(size.clone().subScalar(1), 0, maxX, 0, maxY).addScalar(1);
+        return v;
     }
 
     private roundOffsetToSparsity(offset: Vector2, face: CubeFace) {
         const min = this.context.interaction.getMinimumDisplayOffset(face)
         const max = this.context.interaction.getMaximumDisplayOffset(face, this.displaySizes[Math.floor(face / 2)])
-        if (face == CubeFace.Front || face == CubeFace.Back || face == CubeFace.Top || face == CubeFace.Bottom) {
+        if (this.context.interaction.cubeTags.includes(CubeTag.OverflowX) && (face == CubeFace.Front || face == CubeFace.Back || face == CubeFace.Top || face == CubeFace.Bottom)) {
             return this.roundVectorToSparsity(offset, -Infinity, Infinity, min.y, max.y);
         }
         return this.roundVectorToSparsity(offset, min.x, max.x, min.y, max.y);
@@ -925,7 +981,6 @@ class CubeSelection {
     }
 
     setVectors(face: CubeFace, size: Vector2, offset: Vector2) {
-        // console.log("setVectors")
         this.displaySizes[Math.floor(face / 2)].copy(this.roundSizeToSparsity(size, face));
         this.displayOffsets[Math.floor(face / 2)].copy(this.roundOffsetToSparsity(offset, face));
         this.updateAfterVectorChange(face, true);
@@ -942,7 +997,7 @@ class CubeSelection {
     }
 
     private updateAfterVectorChange(face: CubeFace, finalChange: boolean) {
-        this.updateRanges(face)
+        this.updateRanges(face, finalChange);
         this.updateOtherVectors(face);
         this.updateSelectionRelevantUi(finalChange);
         if (this.context.orchestrationMinionMode || this.context.orchestrationMasterMode) {
@@ -957,7 +1012,7 @@ class CubeSelection {
         }
 
         for (let i = 0; i < 6; i++) {
-            this.updateRanges(i);
+            this.updateRanges(i, finalChange);
         }
         if (finalChange) {
             this.context.rendering.updateVisibilityAndLods();
@@ -975,7 +1030,7 @@ class CubeSelection {
 
     setRange(dimension: Dimension, min: number, max: number) {
         const range = this.getSelectionRangeByDimension(dimension);
-        range.set(this.context.interaction.roundToSparsity(min), this.context.interaction.roundToSparsity(max));
+        range.set(this.context.interaction.roundToSparsity(min), this.context.interaction.roundToSparsity(max) + 1);
         this.updateAllVectors();
         if (this.context.orchestrationMinionMode || this.context.orchestrationMasterMode) {
             this.context.networking.pushOrchestratorSelectionUpdate(this.displayOffsets, this.displaySizes, true);
@@ -990,9 +1045,9 @@ class CubeSelection {
         this.context.rendering.requestRender();
     }
 
-    private updateRanges(face: CubeFace) {
-        this.xSelectionRangeForFace(face).set(this.displayOffsets[Math.floor(face / 2)].x, this.displayOffsets[Math.floor(face / 2)].x + this.displaySizes[Math.floor(face / 2)].x);
-        this.ySelectionRangeForFace(face).set(this.displayOffsets[Math.floor(face / 2)].y, this.displayOffsets[Math.floor(face / 2)].y + this.displaySizes[Math.floor(face / 2)].y);
+    private updateRanges(face: CubeFace, finalChange: boolean) {
+        this.xSelectionRangeForFace(face).set(this.displayOffsets[Math.floor(face / 2)].x, this.displayOffsets[Math.floor(face / 2)].x + this.displaySizes[Math.floor(face / 2)].x, false);
+        this.ySelectionRangeForFace(face).set(this.displayOffsets[Math.floor(face / 2)].y, this.displayOffsets[Math.floor(face / 2)].y + this.displaySizes[Math.floor(face / 2)].y, false);
     }
 
     private updateAllVectors() {
@@ -1037,17 +1092,17 @@ class CubeSelection {
 
     getIndexValueForFace(face: CubeFace): number {
         if (face == CubeFace.Front) {
-            return this.zSelectionRange.max;
+            return this.zSelectionRange.max - 1;
         } else if (face == CubeFace.Back) {
             return this.zSelectionRange.min;
         } else if (face == CubeFace.Top) {
             return this.ySelectionRange.min;
         } else if (face == CubeFace.Bottom) {
-            return this.ySelectionRange.max;
+            return this.ySelectionRange.max - 1;
         } else if (face == CubeFace.Left) {
             return positiveModulo(this.xSelectionRange.min, this.context.interaction.cubeDimensions.x.steps);
         } else {
-            return positiveModulo(this.xSelectionRange.max, this.context.interaction.cubeDimensions.x.steps);
+            return positiveModulo(this.xSelectionRange.max - 1, this.context.interaction.cubeDimensions.x.steps);
         }
     }
 
@@ -1137,6 +1192,8 @@ class CubeInteraction {
 
     private htmlAnimationTotalDurationDiv!: HTMLElement;
 
+    private animationDropdown!: HTMLElement;
+
     private htmlColormapScaleGradient!: HTMLElement;
     private htmlColormapScaleTexts!: HTMLCollectionOf<Element>;
     private htmlColormapScaleUnitText!: HTMLElement;
@@ -1192,7 +1249,6 @@ class CubeInteraction {
         if (elements.length != 1) {
             console.warn("Tried to access HTML element of class name", className, "but got", elements.length, "results.")
         }
-        console.log("Found element with class name", className, ":", elements[0]);
         return elements[0] as HTMLElement;
     }
 
@@ -1217,6 +1273,8 @@ class CubeInteraction {
         this.htmlAnimationSpeedSliderDiv = this.getHtmlElementByClassName('animation-speed-slider')!;
 
         this.htmlAnimationTotalDurationDiv = this.getHtmlElementByClassName('animation-total-duration')!;
+
+        this.animationDropdown = this.getHtmlElementByClassName('animation-dropdown-content')!;
 
         this.htmlColormapMinInputDiv = this.getHtmlElementByClassName("colormap-min-input") as HTMLInputElement;
         this.htmlColormapMaxInputDiv = this.getHtmlElementByClassName("colormap-max-input") as HTMLInputElement;
@@ -1446,6 +1504,7 @@ class CubeInteraction {
             if (!this.fullyLoaded) {
                 return;
             }
+            this.hideAnimationSettingsHoverForTouchDevices();
             this.currentMouseEventActive = true;
             const localEventPosition = this.getLocalEventPosition(ev);
             this.currentMouseEventOnCube = !isOverBackground(localEventPosition);
@@ -1503,6 +1562,7 @@ class CubeInteraction {
             if (this.context.orchestrationMinionMode && ev.touches.length > 2) {
                 (ev as any).touches = [ev.touches[0]];
             }
+            this.hideAnimationSettingsHoverForTouchDevices();
             this.currentTouchEventOnCube = !Array.from(ev.touches).some((value: Touch, index: number, array: Touch[]) => { return isOverBackground(this.getLocalEventPosition(value)) });
             (ev as any).actOnWorld = !this.currentTouchEventOnCube;
             this.orbitControls.onTouchStart(ev);
@@ -1962,9 +2022,15 @@ class CubeInteraction {
         //     this.context.rendering.updateVisibilityAndLods();
         // }
         this.htmlAnimateStartButton.onclick = () => {
+            if (this.context.touchDevice) {
+                this.showAnimationSettingsHoverForTouchDevices();
+            }
             this.startAnimation();
         }
         this.htmlAnimateStopButton.onclick = () => {
+            if (this.context.touchDevice) {
+                this.showAnimationSettingsHoverForTouchDevices();
+            }
             this.stopAnimation();
         }
 
@@ -1990,6 +2056,14 @@ class CubeInteraction {
 
         this.datasetInfoDialogWrapperDiv.onclick = () => this.datasetInfoDialogWrapperDiv.style.display = "none";
         this.getHtmlElementByClassName("dataset-info-window")!.onclick = (ev) => { ev.stopPropagation(); };
+    }
+
+    showAnimationSettingsHoverForTouchDevices() {
+        this.animationDropdown.style.display = "block";
+    }
+    
+    hideAnimationSettingsHoverForTouchDevices() {
+        this.animationDropdown.style.display = "none";
     }
 
     private startAnimation() {
@@ -2360,9 +2434,9 @@ class CubeInteraction {
         const yRange = this.cubeDimensions.yParameterRange;
         const xRange = this.cubeDimensions.xParameterRange;
         const sliderOffset = this.cubeTags.includes(CubeTag.LongitudeZeroIndexIsGreenwich) ? (Math.round(xRange.length() / 2)) : 0;
-        this.zSelectionSlider.updateOptions({ range: { min: zRange.min, max: zRange.max }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
-        this.ySelectionSlider.updateOptions({ range: { min: yRange.min, max: yRange.max }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
-        this.xSelectionSlider.updateOptions({ range: { min: this.roundUpToSparsity(xRange.min + sliderOffset), max: this.roundDownToSparsity(xRange.max + sliderOffset - 1) }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
+        this.zSelectionSlider.updateOptions({ range: { min: zRange.min, max: zRange.max - 1 }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
+        this.ySelectionSlider.updateOptions({ range: { min: yRange.min, max: yRange.max - 1 }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
+        this.xSelectionSlider.updateOptions({ range: { min: this.roundUpToSparsity(xRange.min + sliderOffset), max: this.roundDownToSparsity(xRange.max + sliderOffset - 2) }, step: this.selectedCubeMetadata.sparsity, margin: this.selectedCubeMetadata.sparsity }, false);
         this.zSelectionSlider.off("update");
         this.ySelectionSlider.off("update");
         this.xSelectionSlider.off("update");
@@ -2398,7 +2472,7 @@ class CubeInteraction {
         const lonIndex = Math.floor((xSelectionRange.min - sliderOffset) / this.cubeDimensions.x.steps + overflowBias);
         if (lonIndex != this.lastLonSliderIndex) {
             const newMinimum = this.roundDownToSparsity(lonIndex * this.cubeDimensions.x.steps + sliderOffset);
-            const newMaximum = this.roundDownToSparsity(lonIndex * this.cubeDimensions.x.steps + lonRange.max + sliderOffset);
+            const newMaximum = this.roundDownToSparsity(lonIndex * this.cubeDimensions.x.steps + lonRange.max - 1 + sliderOffset);
             this.xSelectionSlider.updateOptions({ range: { min: newMinimum, max: newMaximum } }, false);
             this.lastLonSliderIndex = lonIndex;
 
@@ -2407,9 +2481,9 @@ class CubeInteraction {
                 this.mergeSliderTooltips(this.xSliderDiv as any, 40, " - ");
             }
         }
-        this.xSelectionSlider.set([xSelectionRange.min, xSelectionRange.max], false);
-        this.ySelectionSlider.set([ySelectionRange.min, ySelectionRange.max], false);
-        this.zSelectionSlider.set([zSelectionRange.min, zSelectionRange.max], false);
+        this.xSelectionSlider.set([xSelectionRange.min, xSelectionRange.max - 1], false);
+        this.ySelectionSlider.set([ySelectionRange.min, ySelectionRange.max - 1], false);
+        this.zSelectionSlider.set([zSelectionRange.min, zSelectionRange.max - 1], false);
     }
 
     updateLabelsAfterChange() {
@@ -2418,11 +2492,11 @@ class CubeInteraction {
         const xSelectionRange = this.cubeSelection.getSelectionRangeByDimension(Dimension.X);
         const dims = this.cubeDimensions;
         this.htmlAxisLabelXMin.textContent = `${this.cubeDimensions.x.getIndexString(positiveModulo(xSelectionRange.min, dims.x.steps))}`;
-        this.htmlAxisLabelXMax.textContent = `${this.cubeDimensions.x.getIndexString(positiveModulo(xSelectionRange.max, dims.x.steps))}`;
+        this.htmlAxisLabelXMax.textContent = `${this.cubeDimensions.x.getIndexString(positiveModulo(xSelectionRange.max - 1, dims.x.steps))}`; // prefer showing max value over 0
         this.htmlAxisLabelYMin.textContent = `${this.cubeDimensions.y.getIndexString(ySelectionRange.min)}`;
-        this.htmlAxisLabelYMax.textContent = `${this.cubeDimensions.y.getIndexString(ySelectionRange.max)}`;
+        this.htmlAxisLabelYMax.textContent = `${this.cubeDimensions.y.getIndexString(ySelectionRange.max - 1)}`;
         this.htmlAxisLabelZMin.textContent = `${this.cubeDimensions.z.getIndexString(zSelectionRange.min)}`;
-        this.htmlAxisLabelZMax.textContent = `${this.cubeDimensions.z.getIndexString(zSelectionRange.max)}`;
+        this.htmlAxisLabelZMax.textContent = `${this.cubeDimensions.z.getIndexString(zSelectionRange.max - 1)}`;
         this.htmlAxisLabelXDimensionName.textContent = `${this.cubeDimensions.x.getName()}`;
         this.htmlAxisLabelYDimensionName.textContent = `${this.cubeDimensions.y.getName()}`;
         this.htmlAxisLabelZDimensionName.textContent = `${this.cubeDimensions.z.getName()}`;
@@ -2653,13 +2727,8 @@ class CubeInteraction {
 
         this.context.tileData.resetDataStatistics();
 
-        if (this.cubeDimensions.z.type == CubeDimensionType.Time && this.selectedParameter.parameterCoverageTime.length() > 1) {
-            this.cubeDimensions.zParameterRange.copy(this.selectedParameter.parameterCoverageTime);
-        } else {
-            this.cubeDimensions.zParameterRange.set(0, this.cubeDimensions.z.steps - 1);
-        }
+        this.cubeDimensions.setInitialParameterRanges(this.selectedParameter.parameterCoverageTime);
         this.lastLonSliderIndex = NaN;
-        this.cubeDimensions.roundParameterRangesToSparsity();
 
         this.currentZoomFactor = [1.0, 1.0, 1.0];
         this.previousZoomFactor = [1.0, 1.0, 1.0];
@@ -2738,6 +2807,7 @@ class CubeInteraction {
         this.selectedCube = logicalDataCube;
         const meta = await this.context.networking.fetch(`/api/datasets/${logicalDataCube.id}`);
         this.selectedCubeMetadata = meta;
+        ParameterRange.sparsity = this.selectedCubeMetadata.sparsity;
         this.cubeParameters = new Map<string, Parameter>();
         for (let parameterId of Object.keys(meta["data_vars"])) {
             const parameterAttributionLookupId = parameterId.endsWith(ANOMALY_PARAMETER_ID_SUFFIX) ? parameterId.substring(0, parameterId.length - ANOMALY_PARAMETER_ID_SUFFIX.length) : parameterId;
@@ -2838,9 +2908,6 @@ class CubeInteraction {
         this.context.log("Selected cube meta:", meta);
         // console.log(selectedCubeDimensions);
         this.context.rendering.updateOverflowSettings(this.cubeTags.includes(CubeTag.OverflowX), false, false);
-        this.cubeDimensions.zParameterRange.set(0, this.cubeDimensions.z.steps - 1);
-        this.cubeDimensions.yParameterRange.set(0, this.cubeDimensions.y.steps - 1);
-        this.cubeDimensions.xParameterRange.set(0, this.cubeDimensions.x.steps - 1);
         this.XYdataAspectRatio = this.context.widgetMode ? 1.0 : this.cubeDimensions.x.steps / this.cubeDimensions.y.steps;
         this.context.log("Cube tags:", this.cubeTags.map(a => CubeTag[a]));
         this.updateAvailableParametersUi();
@@ -2980,7 +3047,7 @@ class CubeInteraction {
         if (query.indexOf(this.urlFragmentStartSymbol) > -1) {
             query = query.substring(0, query.indexOf(this.urlFragmentStartSymbol));
         }
-        const hash = this.urlFragmentStartSymbol + [this.selectedCube.id.toLowerCase(), this.selectedParameterId.toLowerCase(), this.cubeSelection.getSelectionRangeByDimension(Dimension.Z).toString(), this.cubeSelection.getSelectionRangeByDimension(Dimension.Y).toString(), this.cubeSelection.getSelectionRangeByDimension(Dimension.X).toString()].join(this.urlFragmentSplitSymbol);
+        const hash = this.urlFragmentStartSymbol + [this.selectedCube.id.toLowerCase(), this.selectedParameterId.toLowerCase(), this.cubeSelection.getSelectionRangeByDimension(Dimension.Z).toString(-1), this.cubeSelection.getSelectionRangeByDimension(Dimension.Y).toString(-1), this.cubeSelection.getSelectionRangeByDimension(Dimension.X).toString(-1)].join(this.urlFragmentSplitSymbol);
         history.replaceState({}, "", query.length > 1 ? query + hash : "?" + hash);
     }
 
@@ -3196,7 +3263,9 @@ class CubeInteraction {
     }
 
     private changeZoomOnFace(zoomDelta: number, face: CubeFace, focusUv: Vector2, immediate: boolean = false) {
-        this.reconstructZoomFactor(face, true);
+        if (zoomDelta > 0) {
+            this.reconstructZoomFactor(face, true);
+        }
         const displaySizeBounds = this.getDisplaySizeBounds(face);
         const newDisplaySize = displaySizeBounds.maxDisplaySize.clone();
 
@@ -3248,8 +3317,8 @@ class CubeInteraction {
         const centerPoint = zoomFactorChanged ? newCenterPoint : oldCenterPoint;
         newDisplayOffset.copy(centerPoint).sub(relativeOffset);
 
-        if (this.cubeTags.includes(CubeTag.Global) && (face == CubeFace.Front || face == CubeFace.Back || face == CubeFace.Top || face == CubeFace.Bottom)) {
-            newDisplayOffset.y = clamp(newDisplayOffset.y, this.getMinimumDisplayOffset(face).y, this.getMaximumDisplayOffset(face, newDisplaySize).y)
+        if (this.cubeTags.includes(CubeTag.OverflowX)) {
+            newDisplayOffset.y = clamp(newDisplayOffset.y, this.getMinimumDisplayOffset(face).y, this.getMaximumDisplayOffset(face, newDisplaySize).y);
             newDisplayOffset.x = this.normalizeOverflowingXValue(newDisplayOffset.x, face);
         } else {
             newDisplayOffset.clamp(this.getMinimumDisplayOffset(face), this.getMaximumDisplayOffset(face, newDisplaySize))
@@ -3328,7 +3397,6 @@ class CubeInteraction {
             }
             const lod = this.context.rendering.lods[face];
 
-            // const key = "(indexValue), lodValue, tileX, tileY"
             const d = TILE_SIZE * Math.pow(2, lod);
             let xValues: number[] = [];
 
@@ -3336,14 +3404,11 @@ class CubeInteraction {
             const maxX = Math.ceil(width / d) - 1;
 
             const offset = this.cubeSelection.getOffsetVector(face);
-            // if (face == CubeFace.Front || face == CubeFace.Back || face == CubeFace.Top || face == CubeFace.Bottom) {
-            //     offset.x = positiveModulo(offset.x, width);
-            // }
             const size = this.cubeSelection.getSizeVector(face);
             const minVisibleY = Math.floor(offset.y / d);
-            const maxVisibleY = Math.floor((offset.y + size.y - 1) / d);
+            const maxVisibleY = Math.floor((offset.y + size.y) / d);
             const minVisibleX = Math.floor(positiveModulo(offset.x, width) / d);
-            const maxVisibleX = Math.floor(positiveModulo(offset.x + size.x - 1, width) / d);
+            const maxVisibleX = Math.floor((positiveModulo(offset.x + size.x - 1, width)) / d);
             const xOverflown = Math.floor(offset.x / width) < Math.floor((offset.x + size.x) / width);
             if ((face == CubeFace.Front || face == CubeFace.Back || face == CubeFace.Top || face == CubeFace.Bottom) && (xOverflown)) {
                 xValues = range(minVisibleX, maxX).concat(range(0, maxVisibleX))
@@ -3482,6 +3547,7 @@ class CubeInteraction {
         this.context.log("Creating QR code link");
         if (this.context.widgetMode) {
             svg = svg.replace("Link to your cube:", "");
+            svg = svg.replace("qrcode.png", "");
         } else {
             const qr = await QRCode.toDataURL(document.URL, { color: { dark: "#000", light: "#ffffff00" } });
             svg = svg.replace("qrcode.png", qr);

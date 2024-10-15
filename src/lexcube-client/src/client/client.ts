@@ -40,6 +40,7 @@ class CubeClientContext {
     orchestrationMasterMode: boolean = (document.URL.indexOf("orchestrationMaster") > 0);
     noUiMode: boolean = (document.URL.indexOf("noUi") > 0);
     scriptedMultiViewMode: boolean = (document.URL.indexOf("scriptedMultiView") > 0);
+    linearTextureFilteringEnabled: boolean = (document.URL.indexOf("linearTextureFiltering") > 0);
 
     screenOrientation: DeviceOrientation = (screen.orientation ? (screen.orientation.type.indexOf("landscape") > -1 ? DeviceOrientation.Landscape : DeviceOrientation.Portrait) : (window.innerHeight > window.innerWidth ? DeviceOrientation.Portrait : DeviceOrientation.Landscape));
     screenAspectRatio: number = window.screen.width / window.screen.height;

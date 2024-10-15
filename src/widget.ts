@@ -683,7 +683,6 @@ export class Cube3DView extends DOMWidgetView {
     render(): void {
         this.el.innerHTML = template;
         this.cubeClientContext = new CubeClientContext(true, this.el.getElementsByClassName("lexcube-body")[0] as HTMLElement, this.model.get("isometric_mode"));
-        console.log("isometric", this.model.get("isometric_mode"))
         const featureCheck = this.cubeClientContext.checkForFeatures();
         console.log("LexCube feature check:", featureCheck ? "Success" : "Failed");
         if (!featureCheck.success) {
