@@ -894,9 +894,23 @@
     ],
     "era5-specific-humidity-at-level-1000": [
         {
+            "key": "q",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.018,
+            "colormap": "deep"
+        },
+        {
             "key": "q_lxc_anomaly",
             "colormapMinimumValue": -0.01,
             "colormapMaximumValue": 0.01
+        }
+    ],
+    "era5-specific-humidity-at-1950": [
+        {
+            "key": "q",
+            "colormapMinimumValue": 0,
+            "colormapMaximumValue": 0.018,
+            "colormap": "deep"
         }
     ]
 }

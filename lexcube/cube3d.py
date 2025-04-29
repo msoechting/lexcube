@@ -19,11 +19,13 @@
 
 
 import datetime
+import json
 import math
 import asyncio
 from traitlets import Unicode, Dict, Float, List, Int, validate, TraitError, Bool, Tuple
 import traitlets
 from typing import Union
+import urllib.request
 
 from ._frontend import module_name, module_version
 import ipywidgets as widgets
@@ -44,6 +46,7 @@ class Timer:
     def cancel(self):
         self._task.cancel()
 
+DEFAULT_WIDGET_SIZE = (12.0, 8.0)
 
 @widgets.register
 class Cube3DWidget(widgets.DOMWidget):
@@ -57,32 +60,42 @@ class Cube3DWidget(widgets.DOMWidget):
     api_metadata = Dict().tag(sync=True)
 
     request_progress = Dict().tag(sync=True)
+    request_progress_reliable_for_timing = Bool(False).tag(sync=True)
     vmin = Float(allow_none=True).tag(sync=True)
     vmax = Float(allow_none=True).tag(sync=True)
-    cmap = traitlets.Union([Unicode(), List()], allow_none=True).tag(sync=True)
+    cmap = traitlets.Union([Unicode(default_value="viridis"), List()], allow_none=True).tag(sync=True)
     xlim = Tuple(Int(), Int(), default_value=(-1, -1)).tag(sync=True)
     ylim = Tuple(Int(), Int(), default_value=(-1, -1)).tag(sync=True)
     zlim = Tuple(Int(), Int(), default_value=(-1, -1)).tag(sync=True)
+
+    widget_size = Tuple(DEFAULT_WIDGET_SIZE).tag(sync=True)
 
     xwrap = Bool(False).tag(sync=True)
     ywrap = Bool(False).tag(sync=True)
     zwrap = Bool(False).tag(sync=True)
 
+    overlaid_geojson = traitlets.Union([Unicode(), Dict()]).tag(sync=True)
+    overlaid_geojson_color = Unicode().tag(sync=True)
+
     isometric_mode = Bool(False).tag(sync=True)
 
-    def __init__(self, data_source, cmap: Union[str, list, None] = None, vmin: Union[float, None] = None, vmax: Union[float, None] = None, isometric_mode: bool = False, use_lexcube_chunk_caching: bool = True, **kwargs):
+    def __init__(self, data_source, cmap: Union[str, list, None] = None, vmin: Union[float, None] = None, vmax: Union[float, None] = None, isometric_mode: bool = False, use_lexcube_chunk_caching: bool = True, overlaid_geojson: Unicode = "", overlaid_geojson_color: Unicode = "black", widget_size: tuple = None, **kwargs):
         super().__init__(**kwargs)
         self.cmap = cmap
         self.vmin = vmin
         self.vmax = vmax
+        self.widget_size = widget_size or DEFAULT_WIDGET_SIZE
         self.isometric_mode = isometric_mode
+        self.overlaid_geojson = overlaid_geojson
+        self.overlaid_geojson_color = overlaid_geojson_color
         self._tile_server, self._dims, self._indices = start_tile_server_in_widget_mode(self, data_source, use_lexcube_chunk_caching)
         self._data_source = self._tile_server.data_source # tile server may have patched/modified data set
         if not self._tile_server:
             raise Exception("Error: Could not start tile server")
         self._tile_server.widget_update_progress = self._update_progress
 
-    def _update_progress(self, progress: list):
+    def _update_progress(self, progress: list, reliable_for_timing: bool = False):
+        self.request_progress_reliable_for_timing = reliable_for_timing
         self.request_progress = { "progress": progress.copy() }
 
     def get_current_cube_selection(self):
@@ -91,13 +104,48 @@ class Cube3DWidget(widgets.DOMWidget):
     def show_sliders(self, continuous_update=True):
         return Sliders(self, self._dims, continuous_update)
     
+    def overlay_geojson(self, geojson_source: Union[str, dict], color: str = "black"):
+        self.overlaid_geojson_color = color
+        self.overlaid_geojson = geojson_source
+
+    @validate("overlaid_geojson")
+    def _valid_geojson(self, geojson_source_proposal: Union[str, dict]):
+        geojson_source = geojson_source_proposal["value"]
+        geojson_string = None
+        if geojson_source is None:
+            return ""
+        if isinstance(geojson_source, str):
+            if len(geojson_source) == 0:
+                return ""
+            try:
+                json.loads(geojson_source)
+                print("Interpreting GeoJSON from given JSON string...")
+            except json.JSONDecodeError:
+                if geojson_source.startswith("http://") or geojson_source.startswith("https://"):
+                    print("Opening GeoJSON from URL...")
+                    with urllib.request.urlopen(geojson_source) as res:
+                        geojson_string = res.read().decode('utf-8')
+                        print(f"Downloaded GeoJSON from URL {geojson_source}.")
+                else:
+                    print("Opening GeoJSON from file...")
+                    try:
+                        with open(geojson_source, "r") as f:
+                            geojson_string = f.read()
+                            print(f"Loaded GeoJSON from file {geojson_source}.")
+                    except FileNotFoundError:
+                        raise TraitError(f"GeoJSON file {geojson_source} not found.")
+        elif isinstance(geojson_source, dict):
+            geojson_string = json.dumps(geojson_source)
+            print(f"Interpreting GeoJSON from given dictionary object...")
+        return geojson_string
+    
     def savefig(self, fname: str = "", include_ui: bool = True, dpi_scale: float = 2.0):
         self.send( { "response_type": "download_figure_request", "includeUi": include_ui, "filename": fname, "dpiscale": dpi_scale } )
-        return 'When using Lexcube-generated images, please acknowledge/cite: M. Söchting, M. D. Mahecha, D. Montero and G. Scheuermann, "Lexcube: Interactive Visualization of Large Earth System Data Cubes," in IEEE Computer Graphics and Applications, vol. 44, no. 1, pp. 25-37, Jan.-Feb. 2024, doi: https://www.doi.org/10.1109/MCG.2023.3321989.'
+        print('When using Lexcube and generated images or videos, please acknowledge/cite: Söchting, M., Scheuermann, G., Montero, D., & Mahecha, M. D. (2025). Interactive Earth system data cube visualization in Jupyter notebooks. Big Earth Data, 1–15. https://doi.org/10.1080/20964471.2025.2471646')
 
     def save_print_template(self, fname: str = ""):
         self.send( { "response_type": "download_print_template_request", "filename": fname } )
-        return 'When using Lexcube-generated images, please acknowledge/cite: M. Söchting, M. D. Mahecha, D. Montero and G. Scheuermann, "Lexcube: Interactive Visualization of Large Earth System Data Cubes," in IEEE Computer Graphics and Applications, vol. 44, no. 1, pp. 25-37, Jan.-Feb. 2024, doi: https://www.doi.org/10.1109/MCG.2023.3321989.'        
+        print('When using Lexcube and generated images or videos, please acknowledge/cite: Söchting, M., Scheuermann, G., Montero, D., & Mahecha, M. D. (2025). Interactive Earth system data cube visualization in Jupyter notebooks. Big Earth Data, 1–15. https://doi.org/10.1080/20964471.2025.2471646')
 
     @validate("xlim")
     def _valid_xlim(self, proposal):
@@ -122,6 +170,17 @@ class Cube3DWidget(widgets.DOMWidget):
                 raise TraitError(f"Boundary of axis {axis} needs to be within double the range of the data source (considering this dimension wraps around the cube): 0 <= value < {max_value}")
             raise TraitError(f"Boundary of axis {axis} needs to be within the range of the data source: 0 <= value <= {max_value}")
         return proposal
+    
+    def show(self, width: float | int = None, height: float | int = None):
+        if (type(width) == tuple):
+            width, height = width
+        if (width and type(width) != float and type(width) != int) or (height and type(height) != float and type(height) != int):
+            raise TraitError("Width and height need to be floats or ints")
+        self.widget_size = (width or DEFAULT_WIDGET_SIZE[0], height or DEFAULT_WIDGET_SIZE[1])
+        return self
+    
+    def plot(self, width: float | int = None, height: float | int = None):
+        return self.show(width, height)
 
 
 

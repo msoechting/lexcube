@@ -57,7 +57,7 @@ class Networking {
     }
 
     connectTileWebsockets() {
-        this.tileWebsocket = io(this.apiServerUrl, {path:"/ws/socket.io/", transports:["websocket"], reconnection: true, reconnectionDelay: 5000})
+        this.tileWebsocket = io(this.apiServerUrl, { path: "/ws/socket.io/", transports: ["websocket"], reconnection: true, reconnectionDelay: 5000 });
         this.tileWebsocket.on('connect', this.onConnectTileWebsockets.bind(this));
         this.tileWebsocket.on('disconnect', this.onDisconnectTileWebsockets.bind(this));
         this.tileWebsocket.on('tile_data', this.onTileWebsocketMessage.bind(this));
@@ -65,9 +65,9 @@ class Networking {
             console.error("Connect error (tile websockets)", e); 
             if (!this.connectionLostAlerted) {
                 this.connectionLostAlerted = true;
-                window.alert("It seems the internet connection was lost. Please reconnect to the internet.")}
+                this.context.interaction.showConnectionLostAlert();
             }
-        );
+        });
         return new Promise<void>(resolve => { this.tileWebsocket.on('connect', () => resolve() )})
     }
     
@@ -82,6 +82,7 @@ class Networking {
     private onConnectTileWebsockets() {
         this.context.log("Connected to tile websockets")
         this.connectionLostAlerted = false;
+        this.context.interaction.hideConnectionLostAlert();
         // this.context.tileData.resetTileStatistics();
     }
 
@@ -227,15 +228,22 @@ class Networking {
             this.context.log("USING CACHED API METADATA:", full_url);
             return JSON.parse(stored);
         }
-        const response = await fetch(full_url);
-        const json = await response.json() as any;
-        if (this.useMetaDataCache) {
-            localStorage.setItem(key, JSON.stringify(json));
+        try {
+            const response = await fetch(full_url);
+            const json = await response.json() as any;
+            if (this.useMetaDataCache) {
+                localStorage.setItem(key, JSON.stringify(json));
+            }
+            return json;
+        } catch (error) {
+            console.error("Could not fetch from", full_url, error);
+            throw Error(`Could not fetch from ${full_url}, ${error}`);
         }
-        return json;
     }
 
-    
+    getFetchUrl(endpoint: string): any {
+        return `${this.apiServerUrl}${endpoint}`;
+    }    
 }
 
 

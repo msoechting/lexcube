@@ -1,6 +1,6 @@
 {
   "name": "lexcube",
-  "version": "0.4.23",
+  "version": "1.0.0",
   "description": "Lexcube: 3D Data Cube Visualization in Jupyter Notebooks",
   "keywords": [
     "jupyter",
@@ -65,6 +65,7 @@
     "@typescript-eslint/eslint-plugin": "^3.6.0",
     "@typescript-eslint/parser": "^3.6.0",
     "acorn": "^7.2.0",
+    "comlink": "^4.4.2",
     "css-loader": "^6.8.1",
     "eslint": "^7.4.0",
     "eslint-config-prettier": "^6.11.0",
@@ -75,6 +76,8 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^29.1.2",
     "mkdirp": "^0.5.1",
+    "modern-gif": "^2.0.4",
+    "mp4-muxer": "^5.1.5",
     "nouislider": "^15.6.1",
     "npm-run-all": "^4.1.3",
     "numcodecs": "file:src/lexcube-client/deps/numcodecs-0.2.5.tgz",
@@ -89,6 +92,7 @@
     "ts-jest": "^29.1.2",
     "ts-loader": "^8.0.0",
     "typescript": "~5.3.3",
+    "webm-muxer": "^5.0.3",
     "webpack": "^5.61.0",
     "webpack-cli": "^4.0.0"
   },

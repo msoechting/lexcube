@@ -8,7 +8,7 @@
 
 **GitHub**: [https://github.com/msoechting/lexcube](https://github.com/msoechting/lexcube)
 
-**Paper**: [https://doi.org/10.1109/MCG.2023.3321989](https://doi.org/10.1109/MCG.2023.3321989)
+**Paper**: [https://doi.org/10.1080/20964471.2025.2471646](https://doi.org/10.1080/20964471.2025.2471646) 
 
 **PyPI**: [https://pypi.org/project/lexcube/](https://pypi.org/project/lexcube/)
 
@@ -33,59 +33,56 @@ Possible data sources:
 
 Example notebooks can be found in the [examples](https://github.com/msoechting/lexcube/tree/main/examples) folder. For a live demo, see also [lexcube.org](https://www.lexcube.org).
 
----
+## Table-of-Contents
 
-**Table of Contents**
+<!-- TOC tocDepth:2..3 chapterDepth:2..6 -->
 
+- [Table-of-Contents](#table-of-contents)
 - [Attribution](#attribution)
 - [How to Use Lexcube](#how-to-use-lexcube)
-  - [Example Notebooks](#example-notebooks)
-  - [Minimal Examples for Getting Started](#minimal-examples-for-getting-started)
-    - [Visualizing Xarray Data](#visualizing-xarray-data)
-    - [Visualizing Numpy Data](#visualizing-numpy-data)
-    - [Visualizing Google Earth Engine Data](#visualizing-google-earth-engine-data)
-    - [Note on Google Collab](#note-on-google-collab)
-    - [Note on Juypter for VSCode](#note-on-juypter-for-vscode)
+    - [Example Notebooks](#example-notebooks)
+    - [Getting Started - Minimal Example](#getting-started---minimal-example)
 - [Installation](#installation)
 - [Cube Visualization](#cube-visualization)
 - [Interacting with the Cube](#interacting-with-the-cube)
 - [Range Boundaries](#range-boundaries)
 - [Colormaps](#colormaps)
-  - [Supported colormaps](#supported-colormaps)
+    - [Supported colormaps](#supported-colormaps)
+- [Load GeoJSON](#load-geojson)
 - [Save figures](#save-figures)
 - [Print your own paper data cube](#print-your-own-paper-data-cube)
 - [Supported metadata](#supported-metadata)
 - [Troubleshooting](#troubleshooting)
-  - [The cube does not respond / API methods are not doing anything / Cube does not load new data](#the-cube-does-not-respond--api-methods-are-not-doing-anything--cube-does-not-load-new-data)
-  - [After installation/update, no widget is shown, only text](#after-installationupdate-no-widget-is-shown-only-text)
-  - [w.savefig breaks when batch-processing/trying to create many figures quickly](#wsavefig-breaks-when-batch-processingtrying-to-create-many-figures-quickly)
-  - [The layout of the widget looks very messed up](#the-layout-of-the-widget-looks-very-messed-up)
-  - ["Error creating WebGL context" or similar](#error-creating-webgl-context-or-similar)
-  - [Memory is filling up a lot when using a chunked dataset](#memory-is-filling-up-a-lot-when-using-a-chunked-dataset)
+    - [The cube does not respond / API methods are not doing anything / Cube does not load new data](#the-cube-does-not-respond-api-methods-are-not-doing-anything-cube-does-not-load-new-data)
+    - [After installation/update, no widget is shown, only text](#after-installationupdate-no-widget-is-shown-only-text)
+    - [w.savefig breaks when batch-processing/trying to create many figures quickly](#wsavefig-breaks-when-batch-processingtrying-to-create-many-figures-quickly)
+    - [The layout of the widget looks very messed up](#the-layout-of-the-widget-looks-very-messed-up)
+    - ["Error creating WebGL context" or similar](#error-creating-webgl-context-or-similar)
+    - [Memory is filling up a lot when using a chunked dataset](#memory-is-filling-up-a-lot-when-using-a-chunked-dataset)
 - [Known bugs](#known-bugs)
 - [Attributions](#attributions)
-- [Development Installation \& Guide](#development-installation--guide)
+- [Development Installation & Guide](#development-installation-guide)
 - [License](#license)
 
----
+<!-- /TOC -->
 
 
 ## Attribution
 
-When using Lexcube and/or generated images, please acknowledge/cite:
+When using Lexcube and generated images or videos, please acknowledge/cite:
 ```bibtex
-@ARTICLE{soechting2024lexcube,
-  author={Söchting, Maximilian and Mahecha, Miguel D. and Montero, David and Scheuermann, Gerik},
-  journal={IEEE Computer Graphics and Applications}, 
-  title={Lexcube: Interactive Visualization of Large Earth System Data Cubes}, 
-  year={2024},
-  volume={44},
-  number={1},
-  pages={25-37},
-  doi={10.1109/MCG.2023.3321989}
+@article{Soechting2025Lexcube,
+    author = {Maximilian Söchting and Gerik Scheuermann and David Montero and Miguel D. Mahecha},
+    title = {Interactive Earth system data cube visualization in Jupyter notebooks},
+    journal = {Big Earth Data},
+    pages = {1--15},
+    year = {2025},
+    publisher = {Taylor \& Francis},
+    doi = {10.1080/20964471.2025.2471646},
+    URL = {https://doi.org/10.1080/20964471.2025.2471646},
 }
 ```
-Lexcube is a project by Maximilian Söchting at the [RSC4Earth](https://www.rsc4earth.de/) at Leipzig University, advised by Prof. Dr. Miguel D. Mahecha and Prof. Dr. Gerik Scheuermann. Thanks to the funding provided by ESA through DeepESDL and DFG through the NFDI4Earth pilot projects!
+Lexcube is a project by Maximilian Söchting at the [RSC4Earth](https://www.rsc4earth.de/) at Leipzig University, advised by Prof. Dr. Miguel D. Mahecha and Prof. Dr. Gerik Scheuermann. Thanks to the funding provided by ESA through [DeepESDL](https://www.earthsystemdatalab.net/) and DFG through the NFDI4Earth pilot projects!
 
 
 ## How to Use Lexcube
@@ -98,7 +95,7 @@ There are also specific example notebooks for the following use cases:
 - [Generating and visualizing a spectral index data cube - with data from OpenEO](https://github.com/msoechting/lexcube/blob/main/examples/5_spectral_indices_with_open_eo.ipynb)
 - [Visualizing Numpy data](https://github.com/msoechting/lexcube/blob/main/examples/2_numpy.ipynb)
 
-### Minimal Examples for Getting Started 
+### Getting Started - Minimal Example
 #### Visualizing Xarray Data
 ```python
 import xarray as xr
@@ -106,7 +103,7 @@ import lexcube
 ds = xr.open_dataset("https://data.rsc4earth.de/download/EarthSystemDataCube/v3.0.2/esdc-8d-0.25deg-256x128x128-3.0.2.zarr/", chunks={}, engine="zarr")
 da = ds["air_temperature_2m"][256:512,256:512,256:512]
 w = lexcube.Cube3DWidget(da, cmap="thermal_r", vmin=-20, vmax=30)
-w
+w.plot()
 ```
 #### Visualizing Numpy Data
 ```python
@@ -114,7 +111,7 @@ import numpy as np
 import lexcube 
 data_source = np.sum(np.mgrid[0:256,0:256,0:256], axis=0)
 w = lexcube.Cube3DWidget(data_source, cmap="prism", vmin=0, vmax=768)
-w
+w.plot()
 ```
 
 #### Visualizing Google Earth Engine Data
@@ -128,7 +125,7 @@ ee.Initialize(opt_url="https://earthengine-highvolume.googleapis.com")
 ds = xr.open_dataset("ee://ECMWF/ERA5_LAND/HOURLY", engine="ee", crs="EPSG:4326", scale=0.25, chunks={})
 da = ds["temperature_2m"][630000:630003,2:1438,2:718]
 w = lexcube.Cube3DWidget(da)
-w
+w.plot()
 ```
 
 #### Note on Google Collab
@@ -186,7 +183,7 @@ You can read and write the boundaries of the current selection via the `xlim`, `
 
 ```python
 w = lexcube.Cube3DWidget(da, cmap="thermal", vmin=-20, vmax=30)
-w
+w.plot()
 # Next cell:
 w.xlim = (20, 400)
 ```
@@ -195,7 +192,7 @@ For fine-grained interactive controls, you can display a set of sliders in anoth
 
 ```python
 w = lexcube.Cube3DWidget(da, cmap="thermal", vmin=-20, vmax=30)
-w
+w.plot()
 # Next cell:
 w.show_sliders()
 ```
@@ -217,7 +214,7 @@ The range of the colormap, if not set using `vmin`/`vmax`, is automatically adju
 ```python
 # 1) Set cmap in constructor
 w = lexcube.Cube3DWidget(da, cmap="thermal", vmin=-20, vmax=30)
-w
+w.plot()
 
 # 2) Set cmap later
 w.cmap = "thermal"
@@ -254,8 +251,45 @@ Qualitative:
 Miscellaneous:
 - "flag", "prism", "ocean", "gist_earth", "terrain", "gist_stern", "gnuplot", "gnuplot2", "CMRmap", "cubehelix", "brg", "gist_rainbow", "rainbow", "jet", "nipy_spectral", "gist_ncar"
 ```
+
+## Overlay GeoJSON data
+You can overlay GeoJSON data onto the cube visualization like this:
+```python
+# 1. Using a URL
+w.overlay_geojson("https://github.com/nvkelso/natural-earth-vector/raw/refs/heads/master/geojson/ne_50m_admin_0_countries.geojson")
+
+# 2. Using a local file
+w.overlay_geojson("regions.geojson")
+
+# 3. Using a JSON/dict object
+w.overlay_geojson({
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[
+                    [24, -11],
+                    [13, -5], 
+                    [17, -7],
+                    [24, -11]
+                ]]
+            }
+        })
+```
+Lexcube extracts the geospatial context from the data set to overlay the GeoJSON. Your data set will need to have "y"/"lat"/"latitude" (as Y) and "x"/"lon"/"longitude" (as X) dimensions for this to work. Lexcube assumes pixel-centered addressing and regular steps across the dimensions.
+
+Using `MultiPolygon` or `Polygon` is preferred. `Point`, `MultiPoint`, `MultiLineString` and `LineString` are also supported. `Point` and `MultiPoint` are represented via diamonds.
+
+If the default color does not work for your data, you can change the color using the second argument:
+```python
+# All 140 X11 color names are supported (no camelcase)
+w.overlay_geojson(natural_earth_url, "skyblue")
+
+# Alternatively:
+w.overlay_geojson(natural_earth_url, "rgb(255, 0, 0)")
+```
+
 ## Save figures
-You can save PNG images of the cube like this: 
+You can save transparent PNG images of the cube like this: 
 ```python
 w.savefig(fname="cube.png", include_ui=True, dpi_scale=2.0)
 ```
@@ -263,7 +297,7 @@ w.savefig(fname="cube.png", include_ui=True, dpi_scale=2.0)
 - `include_ui`: whether to include UI elements such as the axis descriptions and the colormap legend in the image. Default: `true`.
 - `dpi_scale`: the image resolution is multiplied by this value to obtain higher-resolution/quality images. For example, a value of 2.0 means that the image resolution is doubled for the PNG vs. what is visible in the notebook. Default: `2.0`.
 
-If you want to edit multiple cubes into one picture, you may prefer an isometric rendering. You can enable it in the constructor: `lexcube.Cube3DWidget(data_source, isometric_mode=True)`. For comparison:
+If you want to edit multiple cubes into one picture, you may prefer an isometric rendering (no depth distortion). You can enable it in the widget constructor: `lexcube.Cube3DWidget(data_source, isometric_mode=True)`. For comparison:
 
 ![Isometric vs. perspective camera comparison](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/isometric.png)
 
@@ -272,7 +306,7 @@ You can generate a template to make your own paper data cube from your currently
 ```python
 w.save_print_template()
 ```
-In the opened dialog, you can download the print template as either PNG or SVG to your computer. You can also add a custom note to the print template, e.g. to remember specifics about the data set. Printing (recommended: thick paper or photo paper, e.g. 15x20cm), cutting and gluing will give you your own paper data cube for your desk:
+In the opened dialog, you can download the print template as either PNG or SVG to your computer. You can also add a custom note to the print template, e.g. to remember specifics about the data set. Printing (recommended: thick paper or photo paper, e.g., 15x20cm at a photo shop or self-service photo printer), cutting and gluing will give you your own paper data cube for your desk:
 
 ![Print template graphic](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/print-template.png)
 

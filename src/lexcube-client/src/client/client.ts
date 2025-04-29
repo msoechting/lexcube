@@ -31,16 +31,16 @@ class CubeClientContext {
     tileData: TileData;
     interaction: CubeInteraction;
 
-    debugMode: boolean = (document.URL.indexOf("debug") > 0);
-    studioMode: boolean = (document.URL.indexOf("studio") > 0);
-    isometricMode: boolean = (document.URL.indexOf("isometric") > 0);
-    expertMode: boolean = (document.URL.indexOf("expert") > 0);
-    scriptedMode: boolean = (document.URL.indexOf("scripted") > 0);
-    orchestrationMinionMode: boolean = (document.URL.indexOf("orchestrationMinion") > 0);
-    orchestrationMasterMode: boolean = (document.URL.indexOf("orchestrationMaster") > 0);
-    noUiMode: boolean = (document.URL.indexOf("noUi") > 0);
-    scriptedMultiViewMode: boolean = (document.URL.indexOf("scriptedMultiView") > 0);
-    linearTextureFilteringEnabled: boolean = (document.URL.indexOf("linearTextureFiltering") > 0);
+    debugMode: boolean = false;
+    studioMode: boolean = false;
+    isometricMode: boolean = false;
+    expertMode: boolean = false;
+    scriptedMode: boolean = false;
+    orchestrationMinionMode: boolean = false;
+    orchestrationMasterMode: boolean = false;
+    noUiMode: boolean = false;
+    scriptedMultiViewMode: boolean = false;
+    textureFilteringEnabled: boolean = false;
 
     screenOrientation: DeviceOrientation = (screen.orientation ? (screen.orientation.type.indexOf("landscape") > -1 ? DeviceOrientation.Landscape : DeviceOrientation.Portrait) : (window.innerHeight > window.innerWidth ? DeviceOrientation.Portrait : DeviceOrientation.Landscape));
     screenAspectRatio: number = window.screen.width / window.screen.height;
@@ -49,13 +49,24 @@ class CubeClientContext {
 
 
     touchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-    postStartup: () => void = () => {};
+    widgetPostStartup: () => void = () => {};
 
     constructor(widgetMode: boolean = false, htmlParent: HTMLElement = document.body, isometricMode: boolean = false) {
         this.widgetMode = widgetMode;
-        this.isometricMode = isometricMode;
-        
-        this.studioMode = this.studioMode || this.widgetMode;
+        this.isometricMode = isometricMode; 
+
+        if (!widgetMode) {
+            this.isometricMode = this.isometricMode || document.URL.indexOf("isometric") > 0;
+            this.debugMode = document.URL.indexOf("debug") > 0;
+            this.studioMode = document.URL.indexOf("studio") > 0;
+            this.expertMode = document.URL.indexOf("expert") > 0;
+            this.scriptedMode = document.URL.indexOf("scripted") > 0;
+            this.orchestrationMinionMode = document.URL.indexOf("orchestrationMinion") > 0;
+            this.orchestrationMasterMode = document.URL.indexOf("orchestrationMaster") > 0;
+            this.noUiMode = document.URL.indexOf("noUi") > 0;
+            this.scriptedMultiViewMode = document.URL.indexOf("scriptedMultiView") > 0;
+            this.textureFilteringEnabled = document.URL.indexOf("textureFiltering") > 0;
+        }
 
         this.rendering = new CubeRendering(this, htmlParent);
         this.networking = new Networking(this, apiServerUrl);
@@ -134,7 +145,7 @@ class CubeClientContext {
         await this.interaction.startup();
         this.rendering.startup();
         this.networking.postStartup();
-        this.postStartup();
+        this.widgetPostStartup();
     }
     
     log(...params: any[]) {

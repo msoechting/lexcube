@@ -127,8 +127,8 @@ export class OrbitControls extends THREE.EventDispatcher {
     this.target = new THREE.Vector3();
 
     // How far you can dolly in and out ( PerspectiveCamera only )
-    this.minDistance = () => context.isClientPortrait() ? 4.0 - (4 * (context.screenAspectRatio - 0.5)) : 2;
-    this.maxDistance = 15;
+    this.minDistance = () => context.isClientPortrait() ? 0.3 - (4 * (context.screenAspectRatio - 0.5)) : 2;
+    this.maxDistance = 9.5;
 
     // How far you can zoom in and out ( OrthographicCamera only )
     this.minZoom = 0.3;
@@ -540,6 +540,8 @@ export class OrbitControls extends THREE.EventDispatcher {
     // update condition is:
     // min(camera displacement, camera rotation in radians)^2 > EPS
     // using small-angle approximation cos(x/2) = 1 - x^2 / 8
+
+    this.object.updateMatrixWorld();
 
     if ( this.zoomChanged ||
       this.updateLastPosition.distanceToSquared( this.object.position ) > EPS ||

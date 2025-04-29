@@ -31,12 +31,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <link href="nouislider.css" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
-    <style>.expert-mode {display: none;}</style>
+    <style>
+        .expert-mode { 
+            display: none;
+        }
+
+        *::-webkit-scrollbar {
+            height: 0rem;
+            width: 0rem;
+        }
+
+        *::-webkit-scrollbar-track {
+            -ms-overflow-style: none;
+            overflow: -moz-scrollbars-none;
+        }
+
+        *::-webkit-scrollbar-thumb {
+            -ms-overflow-style: none;
+            overflow: -moz-scrollbars-none;
+        }
+    </style>
 </head>
 
 <body class="lexcube-body">
 
-    <div class="fullscreen-wrapper nopointer noselect" style="text-align: center; color:white">
+    <div class="fullscreen-wrapper nopointer noselect axis-label-ui" style="text-align: center; color:white">
         <div style="position: absolute" class="axis-label-parent axis-label-parent-x-min"><div class="axis-label axis-label-x-min"></div></div>
         <div style="position: absolute" class="axis-label-parent axis-label-parent-x-max"><div class="axis-label axis-label-x-max"></div></div>
         <div style="position: absolute" class="axis-label-parent axis-label-parent-x-dimension-name"><div class="axis-label axis-label-x-dimension-name"></div></div>
@@ -48,7 +67,7 @@
         <div style="position: absolute" class="axis-label-parent axis-label-parent-z-dimension-name"><div class="axis-label axis-label-z-dimension-name"></div></div>
     </div>
 
-    <div class="fullscreen-wrapper noselect nopointer">
+    <div class="fullscreen-wrapper noselect nopointer dataset-info-corner-parent">
         <div class="dataset-info-corner">
             <div class="dataset-info-corner-list" style="display: flex;flex-direction: column;align-items: flex-end;">
             </div>
@@ -59,13 +78,25 @@
     <div class="toolbar-ui">
         <div class="toolbar-ui-button fullscreen-button" title="Enter/exit fullscreen" style="background-image: url('fullscreen.svg')"></div>
         <div class="toolbar-ui-button data-select-button" title="Options" onclick="let c = this.parentNode.parentNode.getElementsByClassName('options-ui')[0]; c.style.display = c.style.display == 'none' ? 'block' : 'none';" style="background-image: url('data-management.svg')"></div>
-        <div class="animation-dropdown">
+        <div class="animation-dropdown noselect">
             <div class="toolbar-ui-button animate-start-button" title="Start Animation" style="background-image: url('play.svg')"></div>
             <div class="toolbar-ui-button animate-stop-button" title="Stop Animation" style="background-image: url('pause.svg');display:none;"></div>
 
             <div class="animation-dropdown-content">
                 <div class="ui-normal noselect animation-settings-ui">
                     <h3>Animation Settings</h3>
+                    <div>Animated Dimension:</div>
+                    <select class="animation-dimension-select noselect" style="width: fit-content;
+                            margin-top: 3px;
+                            margin-bottom: 3px;
+                            font-size: 1em;
+                            color: black;">
+                        <option value="x">X</option>
+                        <option value="y">Y</option>
+                        <option value="z" selected >Z</option>
+                    </select>
+                    <hr style="width: 100%;">
+
                     <div>Increment per Step:</div>
                     <div class="slider animation-increment-slider"></div>
                     <div>Visible Window:</div>
@@ -73,6 +104,28 @@
                     <div>Animation Speed:</div>
                     <div class="slider animation-speed-slider"></div>
                     <div>Total Time: <span class="animation-total-duration" style="font-weight: bold;">10.5</span> s</div>
+                    <hr style="width: 100%;">
+                    <label class="animation-selected-range-only-checkbox-label"><input type="checkbox" class="animation-selected-range-only-checkbox" name="animation-selected-range-only"/><div class="animation-selected-range-only-checkbox-label-div" style="display: contents;"> Only animate last selection (X to Y)</div></label>
+                    <hr style="width: 100%;">
+                    <div>
+                        <label class="animation-recording-checkbox-label"><input type="checkbox" class="animation-recording-checkbox" name="animation-recording"/> Record Animation</label>
+                        <div class="animation-recording-in-progress-panel" style="display: none;">
+                            <div class="animation-recording-status" style="color: rgb(255, 43, 48); font-weight: bold;width: 100%;text-align: center;">Recording Animation...</div>
+                            <button class="animation-recording-stop-button" style="width: 100%;">
+                                Stop Recording
+                            </button>
+                        </div>
+                    </div>
+                    <div class="animation-recording-options" style="display: none;">
+                        <button class="animation-recording-restart-button">
+                            Start Recording
+                        </button>
+                        <select class="animation-recording-format">
+                            <option value="MP4">MP4 (default)</option>
+                            <option value="WebM">WebM (smaller files)</option>
+                            <option value="GIF">GIF (large files, slow)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -81,9 +134,37 @@
         <div class="toolbar-ui-button gps-button" title="Show Current Location on Cube" style="background-image: url('location.svg');"></div>
     </div>
 
-    <div class="flex-col-center nopointer noselect bottom-left-ui">
-        <div class="ui-normal hover-info-ui"></div>
-        <div class="flex-col-center color-scale">
+    <div class="fullscreen-wrapper nopointer noselect corner-logo-ui">
+        <img src="lexcube-logo.png" class="corner-logo" style="position:absolute; top: 1.5%; left: 1.5%; opacity: 0.9; max-width: 40%; margin-left: -2px;
+        margin-top: -2px;max-height: 50px;"/>
+    </div>
+
+    <div class="flex-col-center-end noselect bottom-left-ui">
+        <div class="ui-normal nopointer hover-info-ui"></div>
+
+        <div class="colormap-options flex-col-center-end noselect ui-normal" style="overflow-x: clip; max-width: 220px; display: none;">
+            <div class="colormap-section" style="overflow-y: auto;">
+                <div class="btn-group colormap-list" style="overflow-y: auto;">
+    
+                </div>
+            </div>
+            <div class="colormap-settings" style="width: 100%; display: flex; flex-direction: column; gap: 2px;">
+                <hr style="width: 100%;">
+                Colormap Range:<br>
+                <form class="colormap-range-form">
+                    <input type="text" class="colormap-min-input" placeholder="1.0" style="width:5.5em"/> -
+                    <input type="text" class="colormap-max-input" placeholder="1.0" style="width:5.5em"/>
+                    <input type="submit" value="Apply" style="width: 3em; display: none;"/>
+                </form>
+                <div>
+                    <label><input type="checkbox" class="colormap-flipped-checkbox" name="colormap-flipped"> Flip Colormap</label>
+                </div>
+                <div class="expert-mode">
+                    <label><input type="checkbox" class="colormap-percentile-checkbox" name="colormap-percentile" checked> For automatic boundaries: only consider ± 2.5 σ (98.7% of data points)</label>
+                </div>
+            </div>
+        </div>
+        <div class="flex-col-center-end color-scale">
             <div class="color-scale-gradient"></div>
             <div class="color-scale-labels">
                 <div class="color-scale-label"></div>
@@ -94,17 +175,13 @@
         </div>
     </div>
 
-    <div class="fullscreen-wrapper nopointer noselect" style="top: 1.5%; left: 1.5%;">
-        <img src="lexcube-logo.png" style="opacity: 0.9; max-width: 40%; margin-left: -2px;
-        margin-top: -2px;max-height: 50px;"/>
-    </div>
+
 
     <div class="noselect top-left-ui ui-normal jupyter-notification" onclick="this.style.display = 'none';localStorage.setItem('dismiss-jupyter', `${Date.now()}`);" style="padding: 1px;">
         <a href='https://github.com/msoechting/lexcube' target='_blank'><div style="background-image: url('lexcube-jupyter.png'); width: 337px;;
         height: 140px;background-size: contain; cursor:pointer"></div></a>
         <div class="close-button" onclick="this.parentNode.onclick()"></div>
     </div>
-<!-- <a href="https://github.com/msoechting/lexcube" target="_blank" style="width: 100%; height: 100%;"></a> -->
 
     <div class="ui-normal noselect options-ui" style="display: none;">
         <button type="button" class="collapsible-button" onclick="this.parentNode.style.display = 'none';">Close</button>
@@ -133,7 +210,7 @@
             </select>
         </div>
         <hr>
-        <h3 class="noselect" style="cursor: pointer;" onclick="console.log(this.nextSibling); f = this.nextSibling; let e = this; if (f.style.display == 'none') { f.style.display = 'block'; e.textContent = '▼ ' + e.textContent.substring(2) } else { f.style.display = 'none';  e.textContent = '► ' + e.textContent.substring(2) }">▼ Current Selection</h3><div class="selection-section" style="min-width: 330px;">
+        <h3 class="noselect" style="cursor: pointer;" onclick="f = this.nextSibling; let e = this; if (f.style.display == 'none') { f.style.display = 'block'; e.textContent = '▼ ' + e.textContent.substring(2) } else { f.style.display = 'none';  e.textContent = '► ' + e.textContent.substring(2) }">▼ Current Selection</h3><div class="selection-section">
             <div class="x-selection-slider-label">X:</div>
             <div>
                 <div class="slider x-selection-slider"></div>
@@ -145,26 +222,6 @@
             <div class="z-selection-slider-label">Z:</div>
             <div>
                 <div class="slider z-selection-slider"></div>
-            </div>
-        </div>
-        
-        <h3 class="noselect expert-mode" style="cursor: pointer;" onclick="let g = this.nextSibling; let h = this; if (g.style.display == 'none') { g.style.display = 'block'; h.textContent = '▼ ' + h.textContent.substring(2) } else { g.style.display = 'none';  h.textContent = '► ' + h.textContent.substring(2) }">► Colormap</h3><div class="expert-mode colormap-section" style="display: none;">
-            Value Range:<br>
-            <div>
-                <input type="text" class="colormap-min-input" placeholder="1.0" style="width:8em"/> -
-                <input type="text" class="colormap-max-input" placeholder="1.0" style="width:8em"/>
-                <button class="colormap-range-apply-button">Apply</button>
-            </div>
-            <div>
-                <input type="checkbox" class="colormap-flipped-checkbox" name="colormap-flipped">
-                <label for="colormap-flipped-checkbox" class="noselect">Flip Colormap</label>
-            </div>
-            <div>
-                <input type="checkbox" class="colormap-percentile-checkbox" name="colormap-percentile" checked>
-                <label for="colormap-percentile-checkbox" class="noselect">Only consider ± 2.5 σ (98.7% of data points)</label>
-            </div>
-            <div class="btn-group colormap-list" style="display: block;">
-
             </div>
         </div>
     </div>
@@ -183,7 +240,7 @@
                 <div class="expert-mode">
                     LexCube is an interactive visualization of large-scale earth data sets. Created at Leipzig University by Maximilian Söchting.
                 </div>
-                <div><b>When using Lexcube and generated images acknowledge/cite</b>: M. Söchting, M. D. Mahecha, D. Montero and G. Scheuermann, "Lexcube: Interactive Visualization of Large Earth System Data Cubes," in IEEE Computer Graphics and Applications, vol. 44, no. 1, pp. 25-37, Jan.-Feb. 2024, doi: <a href="https://www.doi.org/10.1109/MCG.2023.3321989" target="_blank">10.1109/MCG.2023.3321989</a>.</div>
+                <div><b>When using Lexcube and generated images or videos, please acknowledge/cite</b>: M. Söchting, M. D. Mahecha, D. Montero and G. Scheuermann, "Lexcube: Interactive Visualization of Large Earth System Data Cubes," in IEEE Computer Graphics and Applications, vol. 44, no. 1, pp. 25-37, Jan.-Feb. 2024, doi: <a href="https://www.doi.org/10.1109/MCG.2023.3321989" target="_blank">10.1109/MCG.2023.3321989</a>.</div>
 
                 <div class="expert-mode">
                     Client Version: <%= htmlWebpackPlugin.options.version %> (Commit: <%= htmlWebpackPlugin.options.commitDate %>, Build: <%= htmlWebpackPlugin.options.buildDate %>)
@@ -281,15 +338,15 @@
         const b = document.body;
         if (document.URL.indexOf("localhost") != -1) {
             b.getElementsByClassName("tutorial-wrapper")[0].style.display = "none";
-            try {
-                const c = localStorage.getItem('dismiss-jupyter');
-                const v = parseInt(c);
-                const notificationInterval = 1000 * 60 * 60 * 24 * 2; // 2 days
-                if (!isNaN(v) && Date.now() - v < notificationInterval) {
-                    b.getElementsByClassName("jupyter-notification")[0].style.display = "none";
-                }
-            } catch (e) {
+        }
+        try {
+            const c = localStorage.getItem('dismiss-jupyter');
+            const v = parseInt(c);
+            const notificationInterval = 1000 * 60 * 60 * 24 * 2; // 2 days
+            if (!isNaN(v) && Date.now() - v < notificationInterval) {
+                b.getElementsByClassName("jupyter-notification")[0].style.display = "none";
             }
+        } catch (e) {
         }
         var touchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         b.getElementsByClassName("tutorial-mouse")[0].style.display = touchDevice ? 'none' : 'block';

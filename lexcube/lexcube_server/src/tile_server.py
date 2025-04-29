@@ -71,13 +71,13 @@ class DataSourceProxy:
 
     def find_affected_chunks(self, x: slice, y: slice, z: slice):
         x_chunk_start = np.searchsorted(self.x_chunk_indices, x.start, side="right") - 1
-        x_chunk_end = np.searchsorted(self.x_chunk_indices, x.stop - 1, side="right") - 1
+        x_chunk_end = min(np.searchsorted(self.x_chunk_indices, x.stop - 1, side="right") - 1, len(self.x_chunk_indices) - 2)
         y_chunk_start = np.searchsorted(self.y_chunk_indices, y.start, side="right") - 1
-        y_chunk_end = np.searchsorted(self.y_chunk_indices, y.stop - 1, side="right") - 1
+        y_chunk_end = min(np.searchsorted(self.y_chunk_indices, y.stop - 1, side="right") - 1, len(self.y_chunk_indices) - 2)
         z_chunk_start = np.searchsorted(self.z_chunk_indices, z.start, side="right") - 1
-        z_chunk_end = np.searchsorted(self.z_chunk_indices, z.stop - 1, side="right") - 1
+        z_chunk_end = min(np.searchsorted(self.z_chunk_indices, z.stop - 1, side="right") - 1, len(self.z_chunk_indices) - 2)
         return [(z, y, x) for z in range(z_chunk_start, z_chunk_end + 1) for y in range(y_chunk_start, y_chunk_end + 1) for x in range(x_chunk_start, x_chunk_end + 1)]
-    
+
     def get_chunk_slices(self, chunk_ix: int, chunk_iy: int, chunk_iz: int):
         return (slice(self.z_chunk_indices[chunk_iz], self.z_chunk_indices[chunk_iz + 1]),
                 slice(self.y_chunk_indices[chunk_iy], self.y_chunk_indices[chunk_iy + 1]),
@@ -102,6 +102,9 @@ class DataSourceProxy:
         request_copy_target_slices = (slice(request_copy_target_slice_lower_z, request_copy_target_slice_upper_z), slice(request_copy_target_slice_lower_y, request_copy_target_slice_upper_y), slice(request_copy_target_slice_lower_x, request_copy_target_slice_upper_x))
         return (chunk_copy_source_slices, request_copy_target_slices)
 
+    def is_chunk_cached(self, iz_iy_ix: tuple[int, int, int]):
+        return iz_iy_ix in self.chunk_cache
+
     def get_chunk(self, iz: int, iy: int, ix: int):
         chunk_key = (iz, iy, ix)
         if chunk_key not in self.chunk_cache:
@@ -124,7 +127,7 @@ class DataSourceProxy:
             c = self.get_chunk(iz, iy, ix)
             (chunk_copy_source_slices, request_copy_target_slices) = self.get_chunk_slices_for_request(ix, iy, iz, x_request_slice, y_request_slice, z_request_slice)
             np.copyto(output[request_copy_target_slices], c[chunk_copy_source_slices])
-        return np.squeeze(output)
+        return output
 
 
 # from: https://stackoverflow.com/a/2135920
@@ -234,7 +237,6 @@ def calculate_max_lod(tile_size: int, dims: list[int]):
     largest_lod_possible = math.floor(math.log2(min(dims)))
     return min(desired_max_lod, largest_lod_possible)
 
-# This function only works correctly if whole XY slices are passed into it, otherwise flipping Y will not give correct results
 def patch_data(data: np.ndarray, dataset_id: str, parameter: str, dataset_config: DatasetConfig = None) -> np.ndarray:
     if dataset_id == "esdc-2.1.1-high-res" and parameter in ["sensible_heat", "terrestrial_ecosystem_respiration", "net_radiation", "net_ecosystem_exchange", "latent_energy", "gross_primary_productivity"]:
         data = np.where(data==-9999, np.nan, data) # Replace netcdf -9999(=NaN) values
@@ -311,7 +313,11 @@ def get_dimension_labels(data_array: xr.DataArray, dimension_name: str, dimensio
         if data_array[dimension_name].dtype == cftime.datetime:
             return np.datetime_as_string([np.datetime64(str(d)) for d in data_array[dimension_name].values], timezone="UTC").tolist()
         else:
-            return np.datetime_as_string(data_array[dimension_name].values, timezone="UTC").tolist()
+            try:
+                return np.datetime_as_string(data_array[dimension_name].values, timezone="UTC").tolist()
+            except:
+                return data_array[dimension_name].values.tolist()
+
     return data_array[dimension_name].values.tolist()
 
 class DatasetMetadata:
@@ -823,23 +829,25 @@ class Tile:
     def get_hash_key(self):
         return "-".join([self.dataset_id, self.parameter, str(self.index_dimension.value), str(self.index_value), str(self.lod), str(self.x), str(self.y)])
 
-    def generate_from_data(self, source_data: Union[xr.DataArray, np.ndarray, DataSourceProxy], tile_compressor: TileCompressor, z_offset: int = 0, added_compression_error: float = 0.0, resample_resolution: int = 1, compress_lossless: bool = False):
+    def get_data_access_slices(self, z_offset: int = 0):
         lod_factor = pow(2, self.lod)
-        inverse_lod_factor = 1 / lod_factor
         lod_tile_size = lod_factor * self.tile_size
         lat_tile_index = self.x if self.index_dimension == Dimension.X else self.y
 
-        z_slice = slice(lod_factor * (self.y * self.tile_size - z_offset), lod_factor * ((self.y + 1) * self.tile_size - z_offset))
-        y_slice = slice(lod_tile_size * lat_tile_index, lod_tile_size * (lat_tile_index + 1))
-        x_slice = slice(lod_tile_size * self.x, lod_tile_size * (self.x + 1))
+        return (
+            slice(self.index_value - z_offset, self.index_value - z_offset + 1) if self.index_dimension == Dimension.Z else slice(lod_factor * (self.y * self.tile_size - z_offset), lod_factor * ((self.y + 1) * self.tile_size - z_offset)),
+            slice(self.index_value, self.index_value + 1) if self.index_dimension == Dimension.Y else slice(lod_tile_size * lat_tile_index, lod_tile_size * (lat_tile_index + 1)),
+            slice(self.index_value, self.index_value + 1) if self.index_dimension == Dimension.X else slice(lod_tile_size * self.x, lod_tile_size * (self.x + 1)),
+        )
+
+    def generate_from_data(self, source_data: Union[xr.DataArray, np.ndarray, DataSourceProxy], tile_compressor: TileCompressor, z_offset: int = 0, added_compression_error: float = 0.0, resample_resolution: int = 1, compress_lossless: bool = False):
+        lod_factor = pow(2, self.lod)
+        inverse_lod_factor = 1 / lod_factor
+
+        z_slice, y_slice, x_slice = self.get_data_access_slices(z_offset)
 
         if len(source_data.shape) == 3:
-            if self.index_dimension == Dimension.Z:
-                data_values = source_data[self.index_value - z_offset, y_slice, x_slice]
-            elif self.index_dimension == Dimension.Y:
-                data_values = source_data[z_slice, self.index_value, x_slice]
-            elif self.index_dimension == Dimension.X:
-                data_values = source_data[z_slice, y_slice, self.index_value]
+            data_values = np.squeeze(source_data[z_slice, y_slice, x_slice], axis=self.index_dimension.value)
         elif len(source_data.shape) == 2:
             if self.index_dimension == Dimension.Z:
                 data_values = source_data[y_slice, x_slice]
@@ -946,7 +954,7 @@ class Tile:
 
     def __str__(self):
         return f"{self.dataset_id} / {self.parameter} / Index: {self.index_dimension.name}, {self.index_value} / LoD: {self.lod} / XY: {self.x},{self.y}"
-        
+
 class TileGenerationCache:
     def __init__(self, tile_disk_storage: TileDiskStorage, save_on_disk=False) -> None:
         # By default, intermediate tiles are generated in memory. 
@@ -1019,16 +1027,25 @@ class TileServer:
         self.next_request_id = 0
         self.next_request_group_id = 0
         self.request_progress = {}
+        self.request_progress_touched_chunks = {}
     
 
-    def update_progress(self, request_group_id: int, request_id: int, done: int, total: int = -1):
+    def update_progress(self, request_group_id: int, request_id: int, done: int, total: int = -1, touched_chunks: set = None):
         if not self.request_progress.get(request_group_id):
             self.request_progress[request_group_id] = {}
+
+        if self.is_chunk_caching_enabled():
+            if touched_chunks:
+                self.request_progress_touched_chunks[request_group_id] = touched_chunks
+            total = len(self.request_progress_touched_chunks[request_group_id])
+            self.widget_update_progress([done, total], True)
+            return
+        
         if total >= 0:
             self.request_progress[request_group_id][request_id] = [ done, total ]
         else:
             self.request_progress[request_group_id][request_id][0] = done
-        # print(f"Update progress: {self.request_progress} for request group {request_group_id}")
+        
         if self.widget_mode:
             current: dict = self.request_progress[request_group_id]
             done = sum(c[0] for c in current.values())
@@ -1037,7 +1054,7 @@ class TileServer:
 
     def startup_widget(self, data_source: Union[xr.DataArray, np.ndarray], use_lexcube_chunk_caching: bool):
         if type(data_source) == xr.DataArray and not data_source.chunks:
-            print("Xarray input object does not have chunks. You can re-open with 'chunks={}' to enable dask for caching and progress reporting functionality - but may be overall slower for small data sets.")
+            print("Xarray input object does not have chunks. You can re-open your data set with 'xr.open_dataset(..., chunks={})' to enable caching and accurate progress reporting - but may sometimes be slower for small data sets.")
         dask_cache = Cache(2e9)  # Leverage two gigabytes of memory
         dask_cache.register()
         self.data_source = patch_dataset(data_source)
@@ -1104,28 +1121,50 @@ class TileServer:
     def pre_register_requests(self, requests):
         request_group_id = self.next_request_group_id
         self.next_request_group_id += 1
+        all_touched_chunks = set()
         for request in requests:
             request["request_id"] = self.next_request_id
             request["request_group_id"] = request_group_id
-            self.update_progress(request_group_id, request["request_id"], 0, len(request["xys"]))
             self.next_request_id += 1
+
+            _, _, _, _, _, _, tiles = self.get_metadata_and_tiles_from_request(request)
+            if self.is_chunk_caching_enabled():
+                tile_slices = [tile.get_data_access_slices() for tile in tiles] # z-first
+                touched_chunks = [self.data_source_proxy.find_affected_chunks(s[2], s[1], s[0]) for s in tile_slices] # chunks are z-first
+                set_of_touched_chunks = set([c for cc in touched_chunks for c in cc])
+                all_touched_chunks.update(set_of_touched_chunks)
+            else:
+                self.update_progress(request_group_id, request["request_id"], 0, len(tiles))
+
+        # For chunk caching, need another loop since the union of all touched chunks is not known until the end of the loop
+        if self.is_chunk_caching_enabled():
+            for request in requests:
+                self.update_progress(request_group_id, request["request_id"], 0, len(all_touched_chunks), all_touched_chunks)
     
-    def handle_tile_request_widget(self, request):
+    def get_metadata_and_tiles_from_request(self, request):
         request_id = request["request_id"]
         request_group_id = request["request_group_id"]
         index_dimension = dimension_mapping[request["indexDimension"]]
         index_value = request["indexValue"]
         lod = request["lod"]
         xys = request["xys"]
+        tiles = [Tile(self.TILE_SIZE, "", "", index_dimension, index_value, lod, xy[0], xy[1]) for xy in xys]
+        return (request_id, request_group_id, index_dimension, index_value, lod, xys, tiles)
+
+    def is_chunk_caching_enabled(self):
+        return self.use_data_source_proxy and self.data_source_proxy.cache_chunks
+    
+    def handle_tile_request_widget(self, request):
         before = time.perf_counter()
+
+        request_id, request_group_id, _, _, _, _, tiles = self.get_metadata_and_tiles_from_request(request)
 
         data = bytearray()
         sizes = []
         tiles_generated = 0
         cache_hits = 0
-        # with self.register_progress(request_id, len(xys)):
-        for xy in xys:
-            t = Tile(self.TILE_SIZE, "", "", index_dimension, index_value, lod, xy[0], xy[1])
+
+        for t in tiles:
             tile_cached = self.tile_memory_cache.tile_exists(t)
             if tile_cached:
                 cache_hits += 1
@@ -1136,7 +1175,12 @@ class TileServer:
                 self.tile_memory_cache.put_data(t, d)
             data += d
             sizes.append(len(d))
-            self.update_progress(request_group_id, request_id, len(sizes))
+
+            if self.is_chunk_caching_enabled():
+                cached_chunks = [c for c in self.request_progress_touched_chunks[request_group_id] if self.data_source_proxy.is_chunk_cached(c)]
+                self.update_progress(request_group_id, request_id, len(cached_chunks))
+            else:
+                self.update_progress(request_group_id, request_id, len(sizes))
         time_took_secs = time.perf_counter() - before
         # print(f"request {request_id}, index {index_dimension.name}, value {index_value}, lod {lod}, xys {xys} (cache hits: {cache_hits})")
         # if tiles_generated > 0:

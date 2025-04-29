@@ -16,6 +16,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { degToRad } from "three/src/math/MathUtils";
+
 enum CubeFace {
     Front = 0,
     Back = 1,
@@ -130,12 +132,14 @@ const NOT_LOADED_REPLACEMENT_VALUE = -99999.0;
 const COLORMAP_STEPS = 1024;
 const DEFAULT_COLORMAP = "viridis";
 
+const DEFAULT_FOV: number = 40;
+
 const DEFAULT_WIDGET_WIDTH = 1024;
 const DEFAULT_WIDGET_HEIGHT = 768;
 
 const API_VERSION = 5;
 const TILE_VERSION = 2;
 
-const PACKAGE_VERSION = "0.4.23";
+const PACKAGE_VERSION = "1.0.0";
 
-export { saveFloatArrayAsPNG, DeviceOrientation, PACKAGE_VERSION, roundDownToSparsity, roundUpToSparsity, roundToSparsity, positiveModulo, range, getIndexDimensionOfFace, getAddressedFacesOfDimension, getFacesOfIndexDimension, capitalizeString, DEFAULT_WIDGET_WIDTH, DEFAULT_WIDGET_HEIGHT, DEFAULT_COLORMAP, ANOMALY_PARAMETER_ID_SUFFIX, TILE_FORMAT_MAGIC_BYTES, TILE_VERSION, TILE_SIZE, MAX_ZOOM_FACTOR, NAN_TILE_MAGIC_NUMBER, LOSSLESS_TILE_MAGIC_NUMBER, NAN_REPLACEMENT_VALUE, COLORMAP_STEPS, NOT_LOADED_REPLACEMENT_VALUE, API_VERSION, Dimension, CubeFace }
+export { saveFloatArrayAsPNG, DEFAULT_FOV, DeviceOrientation, PACKAGE_VERSION, roundDownToSparsity, roundUpToSparsity, roundToSparsity, positiveModulo, range, getIndexDimensionOfFace, getAddressedFacesOfDimension, getFacesOfIndexDimension, capitalizeString, DEFAULT_WIDGET_WIDTH, DEFAULT_WIDGET_HEIGHT, DEFAULT_COLORMAP, ANOMALY_PARAMETER_ID_SUFFIX, TILE_FORMAT_MAGIC_BYTES, TILE_VERSION, TILE_SIZE, MAX_ZOOM_FACTOR, NAN_TILE_MAGIC_NUMBER, LOSSLESS_TILE_MAGIC_NUMBER, NAN_REPLACEMENT_VALUE, COLORMAP_STEPS, NOT_LOADED_REPLACEMENT_VALUE, API_VERSION, Dimension, CubeFace }

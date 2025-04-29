@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "esModuleInterop":true,
-    "lib": ["es2015", "dom", "DOM.Iterable"],
-    "module": "commonjs",
+    "esModuleInterop": true,
+    "lib": ["ES6", "dom", "DOM.Iterable"],
+    "module": "ESNext",
     "moduleResolution": "node",
     "noEmitOnError": true,
     "noUnusedLocals": false,
@@ -14,7 +14,7 @@
     "sourceMap": true,
     "strict": true,
     "strictPropertyInitialization": false,
-    "target": "ES2015",
+    "target": "ES6",
     "types": ["jest"]
   },
   "include": [

@@ -57,8 +57,10 @@ def start_tile_server_in_widget_mode(widget: widgets.DOMWidget, data_source: Uni
     data_source_name = f"{type(data_source)}"
 
     data_attributes = {}
+    coords = {}
     if type(data_source) == xr.DataArray:
         data_attributes = data_source.attrs
+        coords = dict((c, data_source.coords[c].to_dict()) for c in data_source.coords)
 
     widget.api_metadata = {
         "/api": {"status":"ok", "api_version": API_VERSION},
@@ -67,6 +69,7 @@ def start_tile_server_in_widget_mode(widget: widgets.DOMWidget, data_source: Uni
             "dims": { f"{dims[0]}": data_source.shape[0], f"{dims[1]}": data_source.shape[1], f"{dims[2]}": data_source.shape[2] },
             "dims_ordered": dims,
             "attrs": { },
+            "coords": coords,
             "data_vars": { variable_name: { "attrs": data_attributes }}, 
             "indices": indices, 
             "max_lod": calculate_max_lod(tile_server.TILE_SIZE, data_source.shape), 

@@ -111,7 +111,7 @@ class TileData {
     statisticalColormapLowerBound = 0;
     statisticalColormapUpperBound = 0;
     
-    private linearTextureFilteringEnabled;
+    private textureFilteringEnabled;
 
     observedMinValue = Infinity;
     observedMaxValue = -Infinity;
@@ -122,10 +122,10 @@ class TileData {
     private currentColormap: Array<ColormapEntry> = [];    
     private fastColormap: Uint8Array = new Uint8Array(COLORMAP_STEPS * 4);    
     private colorsNotFound = 0;
-    colormapFlipped = false;
+    private colormapFlipped = false;
     colormapUseStandardDeviation = true;
-    colormapMinValueOverride: number | undefined;
-    colormapMaxValueOverride: number | undefined;
+    colormapMinValueOverride: number | null = null;
+    colormapMaxValueOverride: number | null = null;
     symmetricalColormapAroundZero = false;
     
     private tileStoragesColor!: Uint8Array[][];
@@ -154,7 +154,7 @@ class TileData {
 
     constructor(context: CubeClientContext) {
         this.context = context;
-        this.linearTextureFilteringEnabled = this.context.linearTextureFilteringEnabled;
+        this.textureFilteringEnabled = this.context.textureFilteringEnabled;
     }
     
 
@@ -260,7 +260,6 @@ class TileData {
         const lastDownload = this.tileDownloadsFinished + this.tileDownloadsFailed == this.tileDownloadsTriggered;
         if (lastDownload) {
             this.context.rendering.setAllTilesDownloaded();
-            // this.context.rendering.showData();
         }
         if (tile.lod == this.context.rendering.getCurrentlyShownLodForFace(tile.face)) {
             this.context.rendering.showDataForFace(tile.face);
@@ -271,7 +270,6 @@ class TileData {
             }
             this.lastObservedMaxValue = this.observedMaxValue;
             this.lastObservedMinValue = this.observedMinValue;
-            this.context.interaction.updateColormapRangeUi();
             this.colormapHasChanged(true, false);
         }
     }
@@ -300,7 +298,7 @@ class TileData {
                     values[i] = NAN_REPLACEMENT_VALUE;
                 }
             }
-            if (this.linearTextureFilteringEnabled) {
+            if (this.textureFilteringEnabled) {
                 anyNanToDisableLinearTextureFiltering = anyNanToDisableLinearTextureFiltering || values.some(v => isNaN(v));
             }
         }
@@ -311,14 +309,14 @@ class TileData {
                     values[i] = NAN_REPLACEMENT_VALUE;
                 }
             }
-            if (this.linearTextureFilteringEnabled) {
+            if (this.textureFilteringEnabled) {
                 anyNanToDisableLinearTextureFiltering = anyNanToDisableLinearTextureFiltering || nanValues.some(v => v != 0);
             }
         }
         
         const overflowing = this.applyOverflowingTileFix(tile, values, resampleResolution);
 
-        if (anyNanToDisableLinearTextureFiltering && this.linearTextureFilteringEnabled && !overflowing) { // overflow tiles always contain NaN, hence we ignore them
+        if (anyNanToDisableLinearTextureFiltering && this.textureFilteringEnabled && !overflowing) { // overflow tiles always contain NaN, hence we ignore them
             this.disableLinearTextureFiltering();
         }
     }
@@ -431,13 +429,17 @@ class TileData {
             let changeScaleTexts = true;
             if (minValue == Infinity && maxValue == -Infinity) {
                 changeScaleTexts = false;
-            } 
+            }
             if (this.colormapUseStandardDeviation && !this.ignoreStatisticalColormapBounds) {
                 minValue = this.statisticalColormapLowerBound;
                 maxValue = this.statisticalColormapUpperBound;
             }
-            minValue = this.colormapMinValueOverride !== undefined ? this.colormapMinValueOverride : minValue; 
-            maxValue = this.colormapMaxValueOverride !== undefined ? this.colormapMaxValueOverride : maxValue;
+            if (this.colormapMinValueOverride !== null) {
+                minValue = this.colormapMinValueOverride;
+            }
+            if (this.colormapMaxValueOverride !== null) {
+                maxValue = this.colormapMaxValueOverride;
+            }
     
             if (this.symmetricalColormapAroundZero) {
                 const largerValue = Math.max(Math.abs(minValue), Math.abs(maxValue));
@@ -449,14 +451,19 @@ class TileData {
             this.colormapMaxValue = maxValue;
             const targetPrecision = this.context.interaction.getColormapMinMaxValuePrecision();
             if (targetPrecision < Infinity) {
-                this.colormapMaxValue = Math.round(this.colormapMaxValue * 10**targetPrecision) / 10**targetPrecision;
-                this.colormapMinValue = Math.round(this.colormapMinValue * 10**targetPrecision) / 10**targetPrecision;
+                if (this.colormapMinValueOverride === undefined) {
+                    this.colormapMinValue = Math.round(this.colormapMinValue * 10**targetPrecision) / 10**targetPrecision;
+                }
+                if (this.colormapMaxValueOverride === undefined) {
+                    this.colormapMaxValue = Math.round(this.colormapMaxValue * 10**targetPrecision) / 10**targetPrecision;
+                }
             }
-            this.context.log("Colormap options changed", this.colormapMinValue, this.colormapMaxValue, this.colormapFlipped)
+            this.context.log("Colormap options changed", this.colormapMinValue, this.colormapMaxValue, this.colormapFlipped);
             this.context.rendering.updateColormapOptions(this.colormapMinValue, this.colormapMaxValue, this.colormapFlipped);
             if (changeScaleTexts) {
                 this.context.interaction.updateColormapScaleTexts(this.colormapMinValue, this.colormapMaxValue);
             }
+            this.context.interaction.updateColormapRangePlaceholders();
         }
 
         if (colormapChanged) {
@@ -467,6 +474,15 @@ class TileData {
         if (optionsChanged || colormapChanged) {
             this.context.rendering.requestRender();
         }
+    }
+
+    setColormapFlipped(flipped: boolean) {
+        this.colormapFlipped = flipped;
+        this.context.interaction.updateColormapScaleFlip(flipped);
+    }
+
+    getColormapFlipped() {
+        return this.colormapFlipped;
     }
 
     selectedColormapName: string = "";
@@ -572,7 +588,21 @@ class TileData {
         const texture = new DataArrayTexture(this.tileStoragesFloat[face][lod], TILE_SIZE, TILE_SIZE, totalTiles);
         // texture.generateMipmaps = true;
         texture.magFilter = NearestFilter;
-        texture.minFilter = this.linearTextureFilteringEnabled ? LinearFilter : NearestFilter;
+        texture.minFilter = this.textureFilteringEnabled ? LinearFilter : NearestFilter;
+
+        if (this.textureFilteringEnabled) {
+            // Balance anisotropic filtering based on LoD - higher values fix moire patterns better, but increase artifacts at tiling edges
+            if (lod == 0) {
+                texture.anisotropy = 1;
+            } else if (lod == 1) {
+                texture.anisotropy = 2;
+            } else if (lod == 2) {
+                texture.anisotropy = 4;
+            } else {
+                texture.anisotropy = 16;
+            }
+        }
+
         this.context.log("Creating texture with minFilter: ", texture.minFilter == NearestFilter ? "NearestFilter" : "LinearFilter")
         texture.wrapS = ClampToEdgeWrapping;
         texture.wrapT = ClampToEdgeWrapping;
@@ -586,7 +616,7 @@ class TileData {
     }
 
     private disableLinearTextureFiltering() {
-        this.linearTextureFilteringEnabled = false;
+        this.textureFilteringEnabled = false;
         this.context.log("Linear minFilter on all textures disabled");
 
         for (let face = 0; face < 6; face++) {
@@ -597,6 +627,7 @@ class TileData {
                     continue;
                 }
                 texture.minFilter = NearestFilter;
+                texture.anisotropy = 1;
                 texture.needsUpdate = true;
             }
         }
@@ -624,7 +655,7 @@ class TileData {
         this.statisticalColormapLowerBound = 0;
         this.statisticalColormapUpperBound = 0;
         this.colorsNotFound = 0;
-        this.linearTextureFilteringEnabled = this.context.linearTextureFilteringEnabled;
+        this.textureFilteringEnabled = this.context.textureFilteringEnabled;
     }
 
     resetTileMaps() {
