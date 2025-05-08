@@ -787,7 +787,7 @@ class CubeRendering {
                     if (mesh.userData.dimension == Dimension.X) {
                         mesh.scale.set(1.0, 1.0, 1.0 / zoomRelativeToWorld.x);
                     } else {
-                        mesh.scale.set(1.0 / zoomRelativeToWorld.y, 1.0, 1.0);
+                        mesh.scale.set(1.0 / zoomRelativeToWorld.y, this.dimensionOverflow[Dimension.X] ? 3.0 : 1.0, 1.0);
                     }
                 }
             } else {

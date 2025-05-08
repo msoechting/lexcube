@@ -564,9 +564,10 @@ class CubeDimensions {
 
     constructor(context: CubeClientContext, dimensionNames: string[], dimensionSizes: any, indices: { "x": Array<any>, "y": Array<any>, "z": Array<any> }, coords: any) {
         this.context = context;
-        this.x = new CubeDimension(this, Dimension.X, dimensionNames[2], dimensionSizes[dimensionNames[2]], indices["x"], coords ? coords[dimensionNames[2]]["attrs"] : undefined);
-        this.y = new CubeDimension(this, Dimension.Y, dimensionNames[1], dimensionSizes[dimensionNames[1]], indices["y"], coords ? coords[dimensionNames[1]]["attrs"] : undefined);
-        this.z = new CubeDimension(this, Dimension.Z, dimensionNames[0], dimensionSizes[dimensionNames[0]], indices["z"], coords ? coords[dimensionNames[0]]["attrs"] : undefined);
+        const coordsGiven = coords && Object.keys(coords).length > 0 && coords[dimensionNames[0]] && coords[dimensionNames[1]] && coords[dimensionNames[2]];
+        this.x = new CubeDimension(this, Dimension.X, dimensionNames[2], dimensionSizes[dimensionNames[2]], indices["x"], coordsGiven ? coords[dimensionNames[2]]["attrs"] : undefined);
+        this.y = new CubeDimension(this, Dimension.Y, dimensionNames[1], dimensionSizes[dimensionNames[1]], indices["y"], coordsGiven ? coords[dimensionNames[1]]["attrs"] : undefined);
+        this.z = new CubeDimension(this, Dimension.Z, dimensionNames[0], dimensionSizes[dimensionNames[0]], indices["z"], coordsGiven ? coords[dimensionNames[0]]["attrs"] : undefined);
     }
 
     setGeospatialContext(geospatialContext: GeospatialContext) {
@@ -3172,7 +3173,7 @@ class CubeInteraction {
                 this.selectColormapByName("balance");
             } else {
                 if (this.context.widgetMode) {
-                    this.selectColormapByName(DEFAULT_COLORMAP);
+                    this.context.log("Not selecting new colormap on selectParameter (widget mode)")
                 } else {
                     this.selectArbitraryLinearColormap(this.htmlParameterSelect.options.selectedIndex + 2);
                 }

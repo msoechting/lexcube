@@ -27,6 +27,9 @@ import traitlets
 from typing import Union
 import urllib.request
 
+import xarray as xr
+import numpy as np
+
 from ._frontend import module_name, module_version
 import ipywidgets as widgets
 from lexcube.lexcube_server.src.lexcube_widget import start_tile_server_in_widget_mode
@@ -63,7 +66,7 @@ class Cube3DWidget(widgets.DOMWidget):
     request_progress_reliable_for_timing = Bool(False).tag(sync=True)
     vmin = Float(allow_none=True).tag(sync=True)
     vmax = Float(allow_none=True).tag(sync=True)
-    cmap = traitlets.Union([Unicode(default_value="viridis"), List()], allow_none=True).tag(sync=True)
+    cmap = traitlets.Union([Unicode(), List()], default_value="viridis").tag(sync=True)
     xlim = Tuple(Int(), Int(), default_value=(-1, -1)).tag(sync=True)
     ylim = Tuple(Int(), Int(), default_value=(-1, -1)).tag(sync=True)
     zlim = Tuple(Int(), Int(), default_value=(-1, -1)).tag(sync=True)
@@ -81,15 +84,15 @@ class Cube3DWidget(widgets.DOMWidget):
 
     def __init__(self, data_source, cmap: Union[str, list, None] = None, vmin: Union[float, None] = None, vmax: Union[float, None] = None, isometric_mode: bool = False, use_lexcube_chunk_caching: bool = True, overlaid_geojson: Unicode = "", overlaid_geojson_color: Unicode = "black", widget_size: tuple = None, **kwargs):
         super().__init__(**kwargs)
-        self.cmap = cmap
+        self.cmap = cmap or self.cmap
         self.vmin = vmin
         self.vmax = vmax
         self.widget_size = widget_size or DEFAULT_WIDGET_SIZE
         self.isometric_mode = isometric_mode
-        self.overlaid_geojson = overlaid_geojson
-        self.overlaid_geojson_color = overlaid_geojson_color
         self._tile_server, self._dims, self._indices = start_tile_server_in_widget_mode(self, data_source, use_lexcube_chunk_caching)
         self._data_source = self._tile_server.data_source # tile server may have patched/modified data set
+        self.overlaid_geojson = overlaid_geojson
+        self.overlaid_geojson_color = overlaid_geojson_color
         if not self._tile_server:
             raise Exception("Error: Could not start tile server")
         self._tile_server.widget_update_progress = self._update_progress
@@ -98,8 +101,20 @@ class Cube3DWidget(widgets.DOMWidget):
         self.request_progress_reliable_for_timing = reliable_for_timing
         self.request_progress = { "progress": progress.copy() }
 
-    def get_current_cube_selection(self):
-        return self._tile_server.data_source[self.zlim[0]:self.zlim[1], self.ylim[0]:self.ylim[1], self.xlim[0]:self.xlim[1]]
+    def get_current_cube_selection(self, data_to_be_indexed = None, return_index_only: bool = False):
+        a = data_to_be_indexed if data_to_be_indexed is not None else self._data_source
+        if type(a) != xr.DataArray: # for non-xarray data, use numerical indices
+            if return_index_only:
+                return dict(x=self.xlim, y=self.ylim, z=self.zlim)
+            return a[self.zlim[0]:self.zlim[1], self.ylim[0]:self.ylim[1], self.xlim[0]:self.xlim[1]]
+
+        # for Xarray data, index based on metadata indices, not numerical indices
+        source_data = self._data_source[self.zlim[0]:self.zlim[1], self.ylim[0]:self.ylim[1], self.xlim[0]:self.xlim[1]]
+        index = dict([(k, np.array(source_data.indexes[k])) for k in source_data.indexes])
+
+        if return_index_only:
+            return index
+        return a.sel(index)
     
     def show_sliders(self, continuous_update=True):
         return Sliders(self, self._dims, continuous_update)
@@ -112,11 +127,12 @@ class Cube3DWidget(widgets.DOMWidget):
     def _valid_geojson(self, geojson_source_proposal: Union[str, dict]):
         geojson_source = geojson_source_proposal["value"]
         geojson_string = None
-        if geojson_source is None:
+        if geojson_source is None or geojson_source == "":
             return ""
+        if type(self._data_source) == np.ndarray:
+            print("GeoJSON overlay is only supported for xarray data sources.")
+            raise TraitError("GeoJSON overlay is only supported for xarray data sources.")
         if isinstance(geojson_source, str):
-            if len(geojson_source) == 0:
-                return ""
             try:
                 json.loads(geojson_source)
                 print("Interpreting GeoJSON from given JSON string...")

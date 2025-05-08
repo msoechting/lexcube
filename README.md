@@ -48,9 +48,10 @@ Example notebooks can be found in the [examples](https://github.com/msoechting/l
 - [Range Boundaries](#range-boundaries)
 - [Colormaps](#colormaps)
     - [Supported colormaps](#supported-colormaps)
-- [Load GeoJSON](#load-geojson)
+- [Overlay GeoJSON data](#overlay-geojson-data)
 - [Save figures](#save-figures)
 - [Print your own paper data cube](#print-your-own-paper-data-cube)
+- [Get currently visible data subset](#get-currently-visible-data-subset)
 - [Supported metadata](#supported-metadata)
 - [Troubleshooting](#troubleshooting)
     - [The cube does not respond / API methods are not doing anything / Cube does not load new data](#the-cube-does-not-respond-api-methods-are-not-doing-anything-cube-does-not-load-new-data)
@@ -310,6 +311,22 @@ In the opened dialog, you can download the print template as either PNG or SVG t
 
 ![Print template graphic](https://raw.githubusercontent.com/msoechting/lexcube/main/readme-media/print-template.png)
 
+## Get currently visible data subset
+
+You can get the currently visible sub-selection of your data set with `w.get_current_cube_selection()`. There are three ways to use this function:
+
+```python
+# 1. Return currently visible data subset
+air_temperature_sub_cube = w.get_current_cube_selection()
+
+# 2. Return the currently visible selection, but applied to a different 3D dataset
+kndvi_sub_cube = w.get_current_cube_selection(data_to_be_indexed=ds["kndvi"])
+
+# 3. Return indices of the currently visible selection
+selection_indices = w.get_current_cube_selection(return_index_only=True)
+```
+See the end of the [introduction notebook](https://github.com/msoechting/lexcube/blob/main/examples/1_introduction.ipynb) for a live example.
+
 ## Supported metadata
 When using Xarray for the input data, the following metadata is automatically integrated into the visualization:
 
@@ -358,7 +375,7 @@ WebGL 2 seems to be not available or disabled in your browser. Check this page t
 2. Update your video card drivers
 
 ### Memory is filling up a lot when using a chunked dataset 
-Lexcube employs an alternative, more aggressive chunk caching mechanism in contrast to xarray. It will cache any touched chunk in memory without releasing it until the widget is closed. Disabling it will most likely decrease memory usage but increase the average data access latency, i.e., make Lexcube slower. To disable it, use: `lexcube.Cube3DWidget(data_source, use_lexcube_chunk_caching=False)`.
+Lexcube employs an alternative, more aggressive chunk caching mechanism in contrast to xarray. It will cache any touched chunk in memory without releasing it until the widget is closed. Disabling it will most likely decrease memory usage, but increase the average data access latency, i.e., make Lexcube slower. To disable it, use: `lexcube.Cube3DWidget(data_source, use_lexcube_chunk_caching=False)`.
 
 
 ## Known bugs
