@@ -451,10 +451,10 @@ class TileData {
             this.colormapMaxValue = maxValue;
             const targetPrecision = this.context.interaction.getColormapMinMaxValuePrecision();
             if (targetPrecision < Infinity) {
-                if (this.colormapMinValueOverride === undefined) {
+                if (this.colormapMinValueOverride === null) {
                     this.colormapMinValue = Math.round(this.colormapMinValue * 10**targetPrecision) / 10**targetPrecision;
                 }
-                if (this.colormapMaxValueOverride === undefined) {
+                if (this.colormapMaxValueOverride === null) {
                     this.colormapMaxValue = Math.round(this.colormapMaxValue * 10**targetPrecision) / 10**targetPrecision;
                 }
             }

@@ -828,9 +828,9 @@ export class Cube3DView extends DOMWidgetView {
 
     private colormapRangeChangedFromModel(maxChanged: boolean): void {
         if (maxChanged) {
-          this.cubeClientContext.tileData.colormapMaxValueOverride = this.getModelValue("vmax") || null;
+          this.cubeClientContext.tileData.colormapMaxValueOverride = this.getModelValue("vmax") !== undefined ? this.getModelValue("vmax") : null;
         } else {
-          this.cubeClientContext.tileData.colormapMinValueOverride = this.getModelValue("vmin") || null;
+          this.cubeClientContext.tileData.colormapMinValueOverride = this.getModelValue("vmin") !== undefined ? this.getModelValue("vmin") : null;
         }
         this.cubeClientContext.tileData.colormapHasChanged(true, false);
         this.cubeClientContext.interaction.updateColormapRangePlaceholders();
