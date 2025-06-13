@@ -63,6 +63,8 @@ instance/
 docs/_build/
 docs/source/_static/embed-bundle.js
 docs/source/_static/embed-bundle.js.map
+docs/source/_static/*.embed-bundle.js
+docs/source/_static/*.embed-bundle.js.map
 
 # PyBuilder
 target/
@@ -146,6 +148,7 @@ $RECYCLE.BIN/
 
 **/node_modules/
 lexcube/nbextension/index.*
+lexcube/nbextension/*.index.*
 lexcube/labextension/*.tgz
 
 **/.tiles/

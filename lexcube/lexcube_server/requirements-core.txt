@@ -2,6 +2,7 @@ s3fs==2023.12.2
 bottleneck==1.4.0
 cachey==0.2.1
 dask==2024.1.1
+h5py==3.13.0
 netCDF4==1.6.5
 numpy<2.0.0
 opencv-python-headless==4.10.0.84

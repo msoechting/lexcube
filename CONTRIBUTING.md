@@ -73,6 +73,7 @@ tbump <new-version>
 
 ## Building a new version 
 ```bash
+npm run build:prod
 py -m pip install --upgrade build twine pkginfo
 py -m build
 ```

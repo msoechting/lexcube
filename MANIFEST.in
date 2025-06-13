@@ -18,6 +18,10 @@ prune docs/build
 prune docs/gh-pages
 prune docs/dist
 
+prune readme-media/
+prune lexcube/lexcube_server/client
+prune **/.venv**
+
 # Examples
 graft examples
 
@@ -39,3 +43,4 @@ global-exclude *.pyc
 global-exclude *.pyo
 global-exclude .git
 global-exclude .ipynb_checkpoints
+global-exclude .vscode
