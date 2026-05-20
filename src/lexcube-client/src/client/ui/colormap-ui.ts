@@ -286,7 +286,7 @@ class ColormapUIManager {
     }
 
     selectArbitraryLinear(parameterIndex: number) {
-        const names = ["viridian", "algae", "deep", "dense", "haline", "ice", "speed", "tempo", "turbid"];
+        const names = ["viridis", "algae", "deep", "dense", "haline", "ice", "speed", "tempo", "turbid"];
         this.selectByName(names[parameterIndex % names.length]);
     }
 

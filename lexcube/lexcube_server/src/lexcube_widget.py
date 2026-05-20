@@ -29,6 +29,9 @@ def start_tile_server_in_widget_mode(widget: widgets.DOMWidget, data_source: Uni
     if not (len(data_source.shape) == 3 or len(data_source.shape) == 4):
         print("Error: Data source is not 3- or 4-dimensional")
         raise Exception("Error: Data source is not 3- or 4-dimensional")
+    if data_source.dtype.kind not in ["f"]:
+        print(f"Casting data source to float32. Original data type was {data_source.dtype}.")
+        data_source = data_source.astype(np.float32)
 
     tile_server = TileServer(widget_mode = True)
     tile_server.startup_widget(data_source, use_lexcube_chunk_caching)

@@ -3687,19 +3687,23 @@ class CubeInteraction {
     }
 
     getMaxLod3d() {
-        return Math.min(this.selectedCubeMetadata.max_lod_3d, MAXIMUM_SUPPORTED_LOD);
+        const requestedMaxLod = this.selectedCubeMetadata.max_lod_3d;
+        if (requestedMaxLod === undefined || requestedMaxLod === null || isNaN(requestedMaxLod)) {
+            return 0;
+        }
+        return Math.max(0, Math.min(requestedMaxLod, MAXIMUM_SUPPORTED_LOD));
     }
 
     getMaxLod2d() {
         let requestedMaxLod = this.selectedCubeMetadata.max_lod_2d;
-        if (!requestedMaxLod) {
+        if (requestedMaxLod === undefined || requestedMaxLod === null || isNaN(requestedMaxLod)) {
             const largestDim = this.cubeDimensions.totalSize().clone().toArray().reduce((a, b) => Math.max(a, b), 0);
             const calculatedMaxLod = Math.max(Math.floor(Math.log2(largestDim / TILE_SIZE_2D)), 0);
             this.selectedCubeMetadata.max_lod_2d = calculatedMaxLod;
             requestedMaxLod = calculatedMaxLod;
             console.warn("Cube metadata missing max_lod_2d, setting to", requestedMaxLod, "based on largest dimension size", largestDim);
         }
-        return Math.min(requestedMaxLod, MAXIMUM_SUPPORTED_LOD);
+        return Math.max(0, Math.min(requestedMaxLod, MAXIMUM_SUPPORTED_LOD));
     }
 
     
